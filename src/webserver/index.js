@@ -1,4 +1,4 @@
-module.exports = (bot) => {
+module.exports = ({ bot, db }) => {
   let express = require("express");
   let router = express.Router();
   let path = require("path");
@@ -8,7 +8,7 @@ module.exports = (bot) => {
     extended: true
   }));
 
-  router.use('/api', require('./api')(bot))
+  router.use('/api', require('./api')({ bot, db }));
 
   router.use(express.static(path.resolve(__dirname, './public')));
 

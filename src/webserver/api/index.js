@@ -1,11 +1,10 @@
-module.exports = (bot) => {
+module.exports = ({ bot, db }) => {
     let express = require("express");
     let router = express.Router();
     let config = require("../../../config");
     let keyboard_builder = require("../../../lib/helpers/keyboard_builder");
     let moment = require("moment");
     let users = require('../../../lib/helpers/users');
-    let db = require('../../../lib/helpers/db');
 
     router.all("/", (req, res) => {
         return res.send("api hi!")
