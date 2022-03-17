@@ -8,9 +8,13 @@ let page: PageExport = ({ db, config, paginator }) => {
         actions: {
             main: {
                 clearChat: true,
-                async handler() {
+                async handler({ data }) {
+                    let text = `Привет - Привет!`
+                    if (data) {
+                        text += ` data sum: ${data[0] + data[1]}`
+                    }
                     this.send({
-                        text: "Привет - привет!",
+                        text,
                         buttons: [
                             [{ text: "меню", action: "menu" }],
                             [{ text: "помощь", action: "help" }],
@@ -18,9 +22,24 @@ let page: PageExport = ({ db, config, paginator }) => {
                             [{ text: "привет username", page: "name" }],
                             [{ text: "да или нет", page: "yesornot" }],
                             [{ text: "storage test", action: "storage" }],
+                            [
+                                { text: "data1", action: "datatest", data: "asdasdasd" },
+                                { text: "data2", action: "datatest", data: 23 },
+                                { text: "data3", action: "datatest", data: { name: 'sdsdffsdf-sdffsd', id: '33343434' } },
+                                { text: "data4", action: "datatest", data: [{ name: 'sdsdfffsd', id: '333434' }] },
+                                { text: "data5", action: "datatest", data: true }
+                            ],
                         ]
                     })
                 }
+            },
+            async datatest({ data }) {
+                this.update({
+                    text: "Данные: " + data + ", тип: " + typeof data,
+                    buttons: [
+                        [{ text: "обратно", action: "main", data: [1, 2] }],
+                    ]
+                })
             },
             async storage() {
                 let user = await this.user();
@@ -31,6 +50,12 @@ let page: PageExport = ({ db, config, paginator }) => {
                 console.log('2. user.get()', data)
                 let users = await user.list()
                 console.log('3. user.list()', users)
+                this.update({
+                    text: "Тест пройден, смотри консоль",
+                    buttons: [
+                        [{ text: "обратно", action: "main" }],
+                    ]
+                })
             },
             menu() {
                 this.update({

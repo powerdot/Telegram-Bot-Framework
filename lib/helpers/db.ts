@@ -58,7 +58,7 @@ async function removeMessages(ctx, onlyTrash) {
   let query = { chatId };
   let queryTrash = { chatId, trash: onlyTrash };
   let currentMessagesToRemove = await (await collection_BotMessageHistory.find(onlyTrash ? queryTrash : query)).toArray();
-  console.log("currentMessagesToRemove:", currentMessagesToRemove);
+  // console.log("currentMessagesToRemove:", currentMessagesToRemove);
   if (currentMessagesToRemove.length == 0) return;
   for (let currentMessageToRemove of currentMessagesToRemove) {
     let messageId = currentMessageToRemove.messageId;

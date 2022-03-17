@@ -12,19 +12,22 @@ type CallbackPath = {
     next: string | false
 }
 
-type TBFContext = Context & {
+interface TBFContext extends Context {
     CallbackPath: CallbackPath | false
+    updateSubTypes: Array<string>
 }
 
 type PageActionArg = {
     ctx: TBFContext;
+    data?: string | number | object | Array<any> | boolean;
+    text?: string;
 }
 
 type ButtonsRowButton = {
     text: string;
-    action?: string;
+    action?: string | Function;
     page?: string;
-    data?: string;
+    data?: string | number | object | Array<any> | boolean;
 }
 type ButtonsRow = Array<ButtonsRowButton>
 type Buttons = Array<ButtonsRow>
@@ -41,7 +44,7 @@ interface PageActionHandlerThisMethods {
     id: string;
     send: (arg: PageActionHandlerThisSendArg) => Promise<any>;
     update: (arg: PageActionHandlerThisSendArg) => Promise<any>;
-    goToAction: (action: string, data: string) => Promise<any>;
+    goToAction: (action: string, data: string | number | object | Array<any> | boolean) => Promise<any>;
     goToPage: (page: string) => Promise<any>;
     clearChat: () => Promise<any>;
     user: (arg?: { user_id }) => {
@@ -116,5 +119,6 @@ export {
     Page,
     PageExport,
     DB,
-    PageActionHandlerThis
+    PageActionHandlerThis,
+    Buttons
 }

@@ -32,7 +32,7 @@ function parseCallbackPath(ctx) {
   let result = [];
   let routes = callback_data.split("/");
   for (let route of routes) {
-    let data = route.split("-");
+    let data = route.split("�");
     let r = {
       route: data[0],
       action: data[1],

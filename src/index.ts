@@ -7,7 +7,8 @@ import type {
     TBFContext,
     CallbackPath,
     Page,
-    PageActionHandlerThis
+    PageActionHandlerThis,
+    Buttons
 } from "../lib/types"
 let helpers = require("../lib/helpers");
 let keyboard_builder = require("../lib/helpers/keyboard_builder");
@@ -20,10 +21,39 @@ let clearAndOpenMainMenu = require('../lib/helpers/clearAndOpenMainMenu');
 require("../lib/removeCheck")();
 
 function routeToAction(id, action = 'main', data) {
-    return `${id}-${action}${data ? ('-' + data) : ''}`;
+    let parsedData = data;
+    if (data) {
+        let type = typeof data;
+        switch (type) {
+            case "string":
+                parsedData = "S" + data;
+                break;
+            case "number":
+                parsedData = "N" + data.toString();
+                break;
+            case "boolean":
+                parsedData = "B" + data.toString();
+                break;
+            case "object":
+                parsedData = "O" + JSON.stringify(data);
+                break;
+            default:
+                throw new Error("Unsupported data type");
+        }
+    }
+
+    let compiled = `${id}�${action}${parsedData ? ('�' + parsedData) : ''}`;
+
+    let compiled_bytes_length = Buffer.byteLength(compiled, 'utf8');
+    if (compiled_bytes_length > 64) {
+        throw new Error(`Data is too long. Allowed 64 bytes. Now is ${compiled_bytes_length}.\nTry shortening the title of page or action or cut sending data.`);
+    }
+    // console.log('routeToAction data', compiled, compiled_bytes_length)
+
+    return compiled;
 }
 
-function parseButtons(id, buttons = []) {
+function parseButtons(id: string, buttons: Buttons = []) {
     let inline_buttons = [];
     for (let row of buttons) {
         if (!row) continue;
@@ -172,7 +202,7 @@ for (let page of _pages) {
         main_fn.bind(binding);
     }
     if (!pageObject.onCallbackQuery) {
-        pageObject.onCallbackQuery = async (ctx) => {
+        pageObject.onCallbackQuery = async (ctx: TBFContext) => {
             pageObject.ctx = ctx;
             let callbackData = ctx.CallbackPath ? ctx.CallbackPath.current : false;
             if (!callbackData) return;
@@ -183,9 +213,32 @@ for (let page of _pages) {
                 if (!callbackData.action) callbackData.action = "main";
                 let action = pageObject.actions[callbackData.action];
                 if (action) {
+                    let raw_data = callbackData.data ? callbackData.data : "";
+                    let data: any;
+                    if (raw_data) {
+                        let data_type = raw_data[0];
+                        let cleared = raw_data.substring(1);
+                        switch (data_type) {
+                            case "S":
+                                data = cleared;
+                                break;
+                            case "N":
+                                data = Number(cleared);
+                                break;
+                            case "B":
+                                data = cleared.toLocaleLowerCase() === "true";
+                                break;
+                            case "O":
+                                data = JSON.parse(cleared);
+                                break;
+                            default:
+                                data = cleared;
+                                break;
+                        }
+                    }
                     if (action.clearChat) await db.messages.removeMessages(ctx);
                     let action_fn = extractHandler(action);
-                    await action_fn.bind({ ...binding, ctx })({ ctx });
+                    await action_fn.bind({ ...binding, ctx })({ ctx, data });
                     await db.setValue(ctx, "step", pageObject.id + "-" + callbackData.action);
                 } else {
                     throw ("action not found: " + callbackData.action);
@@ -200,12 +253,12 @@ for (let page of _pages) {
             pageObject.ctx = ctx;
             if (ctx.updateSubTypes.length != 1 || ctx.updateSubTypes[0] != 'text') return;
             let step = await db.getValue(ctx, 'step');
-            let id = step.split("-")[0];
-            if (id != pageObject.id) return;
-            let route = step.split("-")[1];
+            let page = step.split("-")[0];
+            if (page != pageObject.id) return;
+            let action = step.split("-")[1];
 
             try {
-                let text_handler = pageObject.actions[route].textHandler;
+                let text_handler = pageObject.actions[action].textHandler;
                 await db.messages.addToRemoveMessages(ctx, ctx.update.message, true);
                 if (text_handler) {
                     if (text_handler.clearChat) await db.messages.removeMessages(ctx);
@@ -244,7 +297,6 @@ if (!token) {
 } else {
     console.log("ℹ️ ", "Telegram token is set.");
 }
-
 
 // @ts-ignore
 let bot: Telegraf;
