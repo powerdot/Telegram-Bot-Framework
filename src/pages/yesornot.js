@@ -13,6 +13,7 @@ module.exports = ({ db, config, paginator, routeToPage }) => {
                         text: "скажи, да или нет?",
                         keyboard: [
                             [{ text: "Да" }, { text: "Нет" }],
+                            [{ text: "Отмена" }],
                             [{ text: "Назад" }],
                         ]
                     })
@@ -36,6 +37,8 @@ module.exports = ({ db, config, paginator, routeToPage }) => {
                             })
                         } else if (text == "Назад") {
                             await this.goToPage("index")
+                        } else if (text == "Отмена") {
+                            await this.goToAction("main")
                         } else {
                             this.send({
                                 text: "Я не понял(\nскажи, да или нет?",

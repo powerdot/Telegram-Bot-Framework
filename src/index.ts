@@ -117,16 +117,26 @@ for (let page of _pages) {
             }
             return await this.ctx.editMessageText(text, options);
         },
-        async goToAction(action) {
-            await db.setValue(this.ctx, 'next_step', routeToAction(this.id, action, ''))
-        },
         async goToPage(page) {
+            // await this.clearChat();
             let found_page = pages.find(x => x.id == page);
             if (found_page) {
                 let action_fn = extractHandler(found_page.actions.main);
                 action_fn.bind({ ...this, ...{ id: page } })({ ctx: this.ctx });
             } else {
                 throw new Error("goToPage() page not found: " + page);
+            }
+        },
+        async goToAction(action) {
+            // await this.clearChat();
+            // console.log('goToAction', this.ctx);
+            let current_page = pages.find(x => x.id == this.id);
+            let page_action = current_page.actions[action];
+            if (page_action) {
+                let action_fn = extractHandler(page_action);
+                action_fn.bind({ ...this, ...{ id: this.id } })({ ctx: this.ctx });
+            } else {
+                throw new Error("goToAction() action not found: " + action);
             }
         },
         async clearChat() {

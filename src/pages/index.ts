@@ -23,13 +23,14 @@ let page: PageExport = ({ db, config, paginator }) => {
                 }
             },
             async storage() {
-                await this.user().setValue("random", Math.random().toString())
-                let get = await this.user().getValue("random")
-                console.log('1. this.user().getValue("random")', get)
-                let data = await this.user().get()
-                console.log('2. this.user().get()', data)
-                let users = await this.user().list()
-                console.log('3. this.user().list()', users)
+                let user = await this.user();
+                await user.setValue("random", Math.random().toString())
+                let get = await user.getValue("random")
+                console.log('1. user.getValue("random")', get)
+                let data = await user.get()
+                console.log('2. user.get()', data)
+                let users = await user.list()
+                console.log('3. user.list()', users)
             },
             menu() {
                 this.update({

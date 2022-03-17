@@ -55,10 +55,10 @@ async function removeValue(ctx, key) {
 
 async function removeMessages(ctx, onlyTrash) {
   let chatId = helpers.getChatId(ctx);
-  let query = { chatId, trash: false };
-  if (onlyTrash === true) query.trash = true;
-  let currentMessagesToRemove = await (await collection_BotMessageHistory.find(query)).toArray();
-  // console.log("currentMessagesToRemove:",currentMessagesToRemove);
+  let query = { chatId };
+  let queryTrash = { chatId, trash: onlyTrash };
+  let currentMessagesToRemove = await (await collection_BotMessageHistory.find(onlyTrash ? queryTrash : query)).toArray();
+  console.log("currentMessagesToRemove:", currentMessagesToRemove);
   if (currentMessagesToRemove.length == 0) return;
   for (let currentMessageToRemove of currentMessagesToRemove) {
     let messageId = currentMessageToRemove.messageId;
