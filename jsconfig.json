@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "typeRoots": [
+            "lib/types/index.d.ts"
+        ],
+        "include": [
+            "src/pages/*"
+        ],
+    }
+}

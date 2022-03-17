@@ -7,23 +7,21 @@ module.exports = ({ db, config, paginator, routeToPage }) => {
         requirements: [],
         actions: {
             main: {
-                handler(ctx) {
+                handler({ ctx }) {
                     this.update({
-                        ctx,
                         text: "скажи как тебя зовут?",
-                        keyboard: [
+                        buttons: [
                             [{ text: "назад", page: "index" }],
                         ]
                     })
                 },
                 textHandler: {
                     clearChat: true,
-                    handler(ctx) {
+                    handler({ ctx }) {
                         let name = ctx.message.text;
                         this.send({
-                            ctx,
                             text: `Привет, ${name}!`,
-                            keyboard: [
+                            buttons: [
                                 [{ text: "назад", page: "index" }],
                             ]
                         })

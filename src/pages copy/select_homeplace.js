@@ -62,7 +62,7 @@ async function handle_message(ctx) {
 					let action = await db.getValue(ctx, "last_action");
 					let new_message = await ctx.replyWithMarkdown(`Ближайшее заведение до Вас — ${nearest.name} 😉`, { reply_markup: { inline_keyboard: await keyboard_builder.main_menu(ctx) } });
 					await db.setValue(ctx, "last_action", "");
-					ctx.update.callback_query = { data: action, message: new_message };
+					ctx.callbackQuery = { data: action, message: new_message };
 					ctx.update.message.message_id = new_message.message_id;
 					ctx.updateType = "callback_query";
 					return;

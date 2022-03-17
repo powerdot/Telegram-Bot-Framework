@@ -6,33 +6,30 @@ module.exports = ({ db, config, paginator, routeToPage }) => {
         name: "рандом",
         requirements: [],
         actions: {
-            main(ctx) {
+            main({ ctx }) {
                 this.update({
-                    ctx,
                     text: "выбери в каких числах хочешь:",
-                    keyboard: [
+                    buttons: [
                         [{ text: "0-10", action: "r10" }],
                         [{ text: "0-100", action: "r100" }],
                         [{ text: "выйти", page: "index" }]
                     ]
                 })
             },
-            r10(ctx) {
+            r10({ ctx }) {
                 this.update({
-                    ctx,
                     text: Math.floor(Math.random() * 10),
-                    keyboard: [
+                    buttons: [
                         [{ text: "еще раз!", action: "r10" }],
                         [{ text: "вернуться к числам", action: "main" }],
                         [{ text: "выйти", page: "index" }],
                     ]
                 })
             },
-            r100(ctx) {
+            r100({ ctx }) {
                 this.update({
-                    ctx,
                     text: Math.floor(Math.random() * 100),
-                    keyboard: [
+                    buttons: [
                         [{ text: "еще раз!", action: "r100" }],
                         [{ text: "вернуться к числам", action: "main" }],
                         [{ text: "выйти", page: "index" }],

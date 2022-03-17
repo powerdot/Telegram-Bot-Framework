@@ -1,6 +1,8 @@
+import { DB } from "../types"
+
 const MongoClient = require("mongodb").MongoClient;
 const config = require('../../config.js');
-let helpers = require("./index.js");
+let helpers = require("./index");
 const TokenGenerator = require('uuid-token-generator');
 const tokgen = new TokenGenerator(256, TokenGenerator.BASE62);
 let moment = require("moment");
@@ -47,9 +49,13 @@ async function setValue(ctx, key, value) {
   return await collection_UserData.updateOne({ name: key, chatId: helpers.getChatId(ctx) }, { $set: { name: key, chatId: helpers.getChatId(ctx), value } }, { upsert: true });
 }
 
+async function removeValue(ctx, key) {
+  return await collection_UserData.remove({ name: key, chatId: helpers.getChatId(ctx) });
+}
+
 async function removeMessages(ctx, onlyTrash) {
   let chatId = helpers.getChatId(ctx);
-  let query = { chatId };
+  let query = { chatId, trash: false };
   if (onlyTrash === true) query.trash = true;
   let currentMessagesToRemove = await (await collection_BotMessageHistory.find(query)).toArray();
   // console.log("currentMessagesToRemove:",currentMessagesToRemove);
@@ -203,6 +209,28 @@ async function _Users_getByGroup(group) {
   return us;
 }
 
+async function _Users_list() {
+  let us = await collection_Users.find({}).toArray();
+  if (!us) us = [];
+  return us;
+}
+
+async function _UserData_get(user_id) {
+  let data = await collection_UserData.find({ chatId: user_id }).toArray();
+  let user_object = {};
+  for (let d of data) {
+    user_object[d.name] = d.value;
+  }
+  return user_object;
+}
+
+async function _UserDestroy(user_id) {
+  await collection_Users.remove({ user_id });
+  await collection_UserData.remove({ user_id });
+  await collection_UserMessageHistory.remove({ user_id });
+  await collection_BotMessageHistory.remove({ user_id });
+}
+
 /**
  * Находит все сообщения пользователя и бота, которые меньше определенного времени в unix timestamp
  * @param {*} unix_lim 
@@ -231,6 +259,8 @@ let exp = {
 
   setValue,
   getValue,
+  removeValue,
+
   webService: {
     secureTokens: {
       getData: _webService_getDataFromToken,
@@ -249,7 +279,14 @@ let exp = {
       set: _Users_setGroup,
       get: _Users_getGroup,
       getAllByGroup: _Users_getByGroup
-    }
+    },
+    list: _Users_list
+  },
+  user: {
+    data: {
+      get: _UserData_get,
+    },
+    destroy: _UserDestroy
   }
 }
 

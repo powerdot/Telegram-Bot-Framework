@@ -1,20 +1,31 @@
 require('dotenv').config()
 require('module-alias/register');
 const Telegraf = require('telegraf');
+import type {
+    Markup,
+    Context,
+    TBFContext,
+    CallbackPath,
+    Page,
+    PageActionHandlerThis
+} from "../lib/types"
 let helpers = require("../lib/helpers");
 let keyboard_builder = require("../lib/helpers/keyboard_builder");
-let moment = require("moment");
-let db = require("../lib/helpers/db");
+let moment = require('moment');
+let db = require("../lib/helpers/db.ts");
 let paginator = require("../lib/paginator");
 let clearAndOpenMainMenu = require('../lib/helpers/clearAndOpenMainMenu');
 
 // Telegram Bot Service
 require("../lib/removeCheck")();
 
+function routeToAction(id, action = 'main', data) {
+    return `${id}-${action}${data ? ('-' + data) : ''}`;
+}
 
-function parseKeyboard(keyboard = []) {
-    let inline_keyboard = [];
-    for (let row of keyboard) {
+function parseButtons(id, buttons = []) {
+    let inline_buttons = [];
+    for (let row of buttons) {
         if (!row) continue;
         let new_row = [];
         for (let button of row) {
@@ -23,7 +34,7 @@ function parseKeyboard(keyboard = []) {
                 if (typeof button.action == "function") {
                     callback_data = button.action();
                 } else {
-                    callback_data = this.routeToAction(button.action, button.data);
+                    callback_data = routeToAction(id, button.action, button.data);
                 }
             }
             if (button.page) callback_data = button.page;
@@ -32,62 +43,129 @@ function parseKeyboard(keyboard = []) {
                 callback_data
             });
         }
-        inline_keyboard.push(new_row);
+        inline_buttons.push(new_row);
     }
-    return inline_keyboard;
+    return inline_buttons;
+}
+
+function extractHandler(action) {
+    let action_fn = typeof action == "function" ? action : action.handler;
+    return action_fn;
 }
 
 let _pages = paginator.list();
 let pages = [];
 for (let page of _pages) {
-    let pageObject = page({
+    let pageObject: Page = page.module({
         db,
         config: require('../config'),
         paginator,
         routeToPage: (page_id) => page_id,
     });
-    let binding = {
-        routeToAction(action = 'main', data) {
-            return `${pageObject.id}-${action}${data ? ('-' + data) : ''}`;
-        },
+    if (!pageObject.id) {
+        console.error('📛', "Page without id:", page.path);
+        continue;
+    }
+    if (pages.find(x => x.id == pageObject.id)) {
+        console.error('📛', "Page with same id:", pageObject.id, '- skipped', page.path);
+        continue;
+    }
+    let binding: PageActionHandlerThis = {
         id: pageObject.id,
-        async send({ ctx, text = "", keyboard = [] }) {
+        ctx: null,
+        async send({ text = "", buttons = [], keyboard = [] }) {
             if (!text) throw new Error("send() text is empty");
-            if (keyboard.length > 0) {
-                let inline_keyboard = parseKeyboard.bind(this)(keyboard);
-                return await ctx.replyWithMarkdown(text, { reply_markup: { inline_keyboard } });
+            let options = {
+                reply_markup: {
+                    inline_keyboard: [],
+                    keyboard: []
+                }
+            };
+            if (buttons.length > 0) {
+                let inline_buttons = parseButtons(this.id, buttons);
+                options.reply_markup.inline_keyboard = inline_buttons;
             } else {
-                return await ctx.replyWithMarkdown(text);
+                options.reply_markup.inline_keyboard = [];
             }
+            if (keyboard.length > 0) {
+                let reply_keyboard = keyboard;
+                options.reply_markup.keyboard = reply_keyboard;
+            } else {
+                options.reply_markup.keyboard = [];
+            }
+            return await this.ctx.replyWithMarkdown(text, options);
         },
-        async update({ ctx, text = "", keyboard = [] }) {
+        async update({ text = "", buttons = [], keyboard = [] }) {
             if (!text) throw new Error("update() text is empty");
-            if (keyboard.length > 0) {
-                let inline_keyboard = parseKeyboard.bind(this)(keyboard);
-                return await ctx.editMessageText(text, { reply_markup: { inline_keyboard } });
+            let options = {
+                reply_markup: {
+                    inline_keyboard: [],
+                    keyboard: []
+                }
+            };
+            if (buttons.length > 0) {
+                let inline_buttons = parseButtons(this.id, buttons);
+                options.reply_markup.inline_keyboard = inline_buttons;
             } else {
-                return await ctx.editMessageText(text);
+                options.reply_markup.inline_keyboard = [];
+            }
+            if (buttons.length > 0) {
+                let reply_keyboard = keyboard;
+                options.reply_markup.keyboard = reply_keyboard;
+            } else {
+                options.reply_markup.keyboard = [];
+            }
+            return await this.ctx.editMessageText(text, options);
+        },
+        async goToAction(action) {
+            await db.setValue(this.ctx, 'next_step', routeToAction(this.id, action, ''))
+        },
+        async goToPage(page) {
+            let found_page = pages.find(x => x.id == page);
+            if (found_page) {
+                let action_fn = extractHandler(found_page.actions.main);
+                action_fn.bind({ ...this, ...{ id: page } })({ ctx: this.ctx });
+            } else {
+                throw new Error("goToPage() page not found: " + page);
             }
         },
-        async goToAction(ctx, action) {
-            await db.setValue(ctx, 'next_step', this.routeToAction(action))
+        async clearChat() {
+            await db.messages.removeMessages(this.ctx);
         },
-        async goToPage(ctx, page) {
-            await db.setValue(ctx, 'next_step', page)
-        },
-        async clearChat(ctx) {
-            await db.messages.removeMessages(ctx);
+        user: function ({ user_id = false } = { user_id: false }) {
+            let _this: PageActionHandlerThis = this;
+            return {
+                async get() {
+                    let chat_id = user_id || helpers.getChatId(_this.ctx);
+                    return db.user.data.get(chat_id);
+                },
+                async list() {
+                    return db.users.list();
+                },
+                async getValue(key) {
+                    return db.getValue(user_id || _this.ctx, key);
+                },
+                async setValue(key, value) {
+                    return db.setValue(user_id || _this.ctx, key, value);
+                },
+                async removeValue(key) {
+                    return db.removeValue(user_id || _this.ctx, key);
+                },
+                async destroy() {
+                    return db.user.destroy(helpers.getChatId(user_id || _this.ctx));
+                },
+            }
         }
     }
     if (pageObject?.actions?.main) {
-        let main_action = pageObject.actions.main;
-        let main_fn = typeof main_action == "function" ? main_action : main_action.handler;
+        let main_fn = extractHandler(pageObject.actions.main);
         main_fn.bind(binding);
     }
     if (!pageObject.onCallbackQuery) {
         pageObject.onCallbackQuery = async (ctx) => {
             pageObject.ctx = ctx;
-            let callbackData = ctx.CallbackPath.current;
+            let callbackData = ctx.CallbackPath ? ctx.CallbackPath.current : false;
+            if (!callbackData) return;
             if (callbackData.route != pageObject.id) return false;
             let perms = await paginator.check_requirements(ctx, pageObject.requirements, pageObject.id);
             if (!perms) return;
@@ -96,11 +174,11 @@ for (let page of _pages) {
                 let action = pageObject.actions[callbackData.action];
                 if (action) {
                     if (action.clearChat) await db.messages.removeMessages(ctx);
-                    let action_fn = typeof action == "function" ? action : action.handler;
-                    await action_fn.bind(binding)(ctx)
+                    let action_fn = extractHandler(action);
+                    await action_fn.bind({ ...binding, ctx })({ ctx });
                     await db.setValue(ctx, "step", pageObject.id + "-" + callbackData.action);
                 } else {
-                    throw ("action route not found: " + callbackData.action);
+                    throw ("action not found: " + callbackData.action);
                 }
             } catch (error) {
                 console.error(`onCallbackQuery ERROR ON PAGE "${pageObject.id}":`, error);
@@ -108,7 +186,7 @@ for (let page of _pages) {
         }
     }
     if (!pageObject.onMessage) {
-        pageObject.onMessage = async (ctx) => {
+        pageObject.onMessage = async (ctx: TBFContext) => {
             pageObject.ctx = ctx;
             if (ctx.updateSubTypes.length != 1 || ctx.updateSubTypes[0] != 'text') return;
             let step = await db.getValue(ctx, 'step');
@@ -121,8 +199,8 @@ for (let page of _pages) {
                 await db.messages.addToRemoveMessages(ctx, ctx.update.message, true);
                 if (text_handler) {
                     if (text_handler.clearChat) await db.messages.removeMessages(ctx);
-                    let text_handler_fn = typeof text_handler == "function" ? text_handler : text_handler.handler;
-                    await text_handler_fn.bind(binding)(ctx);
+                    let text_handler_fn = extractHandler(text_handler);
+                    await text_handler_fn.bind({ ...binding, ctx })({ ctx, text: ctx.message.text });
                 } else {
                     await db.messages.removeMessages(ctx, true);
                 }
@@ -159,16 +237,17 @@ if (!token) {
 
 
 // @ts-ignore
-let bot;
+let bot: Telegraf;
 if (process.env.PROXY) {
-    bot = new Telegraf.Telegraf(token, {
+    bot = new Telegraf(token, {
         telegram: {
             apiRoot: process.env.PROXY
         }
     });
     console.log("ℹ️ ", "Proxy installed", process.env.PROXY);
 } else {
-    bot = new Telegraf.Telegraf(token);
+    bot = new Telegraf(token);
+    // on connection
     console.log("ℹ️ ", "Bot without proxy");
 }
 
@@ -206,10 +285,8 @@ bot.use(async (ctx, next) => {
         if (ctx_key.indexOf("reply") == 0) {
             let old_func = ctx[ctx_key];
             ctx[ctx_key] = (function (o, c) {
-                return async function () {
-                    let args = arguments;
-                    let a = await checkSpecialFunction(o, c, args);
-                    return a;
+                return function () {
+                    return checkSpecialFunction(o, c, arguments);
                 }
             })(old_func, ctx)
         }
@@ -320,31 +397,37 @@ bot.use(async function (ctx, next) {
 });
 
 
-bot.use(async function (ctx, next) {
+bot.use(async function (_ctx: Context, next) {
+    let ctx = _ctx as TBFContext;
+    // let ctx: TBFContext = _ctx as TBFContext;
     for (; ;) {
         ctx.CallbackPath = helpers.parseCallbackPath(ctx);
 
         if (ctx.updateType == 'callback_query') {
-            console.log("👉", ctx.update.callback_query.data);
-            console.log("current CallbackPath:", ctx.CallbackPath.current);
+            console.log("👉", ctx.callbackQuery.data);
+            if (ctx.CallbackPath) console.log("current CallbackPath:", ctx.CallbackPath.current);
             console.log(">> now will be:", await db.getValue(ctx, 'next_step'));
         }
 
         for (let page of pages) {
             await page.call(ctx);
         }
+
+
         console.log("middlewares tour ended");
+
+        if (!ctx.CallbackPath) break;
 
         //
         let next_step = await db.getValue(ctx, 'next_step');
         if (next_step == "") { break; } else {
-            if (!ctx.update.callback_query) { // подмена нынешнего сообщения под callback_query, чтобы продолжить цикл, если что-то было задано сообщением ранее
+            if (!ctx.callbackQuery) { // подмена нынешнего сообщения под callback_query, чтобы продолжить цикл, если что-то было задано сообщением ранее
                 let last_message = await db.messages.bot.getLastMessage(ctx);
                 delete last_message._id;
-                ctx.update.callback_query = last_message;
+                ctx.callbackQuery = last_message;
                 ctx.updateType = 'callback_query';
             }
-            ctx.update.callback_query.data = next_step;
+            ctx.callbackQuery.data = next_step;
             await db.setValue(ctx, 'next_step', "");
         }
     }
