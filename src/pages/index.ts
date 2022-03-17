@@ -21,7 +21,10 @@ let page: PageExport = ({ db, config, paginator }) => {
                             [{ text: "случайные числа", page: "random" }],
                             [{ text: "привет username", page: "name" }],
                             [{ text: "да или нет", page: "yesornot" }],
-                            [{ text: "storage test", action: "storage" }],
+                            [
+                                { text: "storage test", action: "storage" },
+                                { text: "+1", action: "plusone" }
+                            ],
                             [
                                 { text: "str", action: "datatest", data: "asdasdasd" },
                                 { text: "num", action: "datatest", data: 23 },
@@ -54,6 +57,20 @@ let page: PageExport = ({ db, config, paginator }) => {
                     text: "Тест пройден, смотри консоль",
                     buttons: [
                         [{ text: "обратно", action: "main" }],
+                    ]
+                })
+            },
+            async plusone() {
+                let userData = await this.user();
+                let value = (Number(await userData.getValue("plusone")) || 0) + 1
+                await userData.setValue("plusone", value)
+                this.update({
+                    text: "Результат: " + value,
+                    buttons: [
+                        [
+                            { text: "обратно", action: "main" },
+                            { text: "+1", action: "plusone" }
+                        ],
                     ]
                 })
             },

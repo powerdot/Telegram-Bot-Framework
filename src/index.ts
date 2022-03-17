@@ -91,7 +91,6 @@ for (let page of _pages) {
         db,
         config: require('../config'),
         paginator,
-        routeToPage: (page_id) => page_id,
     });
     if (!pageObject.id) {
         console.error('📛', "Page without id:", page.path);
