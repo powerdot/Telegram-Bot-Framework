@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "debug": "nodemon --inspect=3592 -e ts,tsx --exec node -r ts-node/register ./src/index.ts",
+    "debug_chain": "nodemon --inspect=3592 -e ts,tsx --exec node -r ts-node/register ./lib/start_chain/index.ts",
     "run": "ts-node src/index.ts"
   },
   "author": "@powerdot",

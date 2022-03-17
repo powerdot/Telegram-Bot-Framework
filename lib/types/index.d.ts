@@ -46,8 +46,8 @@ interface PageActionHandlerThisMethods {
     id: string;
     send: (arg: PageActionHandlerThisSendArg) => Promise<any>;
     update: (arg: PageActionHandlerThisSendArg) => Promise<any>;
-    goToAction: (action: string, data: PageActionData) => Promise<any>;
-    goToPage: (page: string) => Promise<any>;
+    goToAction: (action: string) => Promise<any>;
+    goToPage: (page: string, action: string) => Promise<any>;
     clearChat: () => Promise<any>;
     user: (arg?: { user_id }) => {
         get: () => Promise<Object>;

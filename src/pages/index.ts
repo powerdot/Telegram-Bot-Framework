@@ -19,7 +19,10 @@ let page: PageExport = ({ db, config, paginator }) => {
                             [{ text: "меню", action: "menu" }],
                             [{ text: "помощь", action: "help" }],
                             [{ text: "случайные числа", page: "random" }],
-                            [{ text: "привет username", page: "name" }],
+                            [
+                                { text: "привет user", page: "name" },
+                                { text: "привет петя", page: "name", data: "петя" }
+                            ],
                             [{ text: "да или нет", page: "yesornot" }],
                             [
                                 { text: "storage test", action: "storage" },
@@ -46,9 +49,12 @@ let page: PageExport = ({ db, config, paginator }) => {
             },
             async storage() {
                 let user = await this.user();
-                await user.setValue("random", Math.random().toString())
+                await user.setValue("random", Math.random())
+                await user.setValue("keked", { kek: true })
                 let get = await user.getValue("random")
                 console.log('1. user.getValue("random")', get)
+                let get_keked = await user.getValue("keked")
+                console.log('1.1. user.getValue("keked")', get_keked)
                 let data = await user.get()
                 console.log('2. user.get()', data)
                 let users = await user.list()

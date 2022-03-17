@@ -7,9 +7,11 @@ module.exports = ({ db, config, paginator, routeToPage }) => {
         requirements: [],
         actions: {
             main: {
-                handler({ ctx }) {
+                handler({ ctx, data }) {
+                    let text = `скажи как тебя зовут?`;
+                    if (data) text += `\nСудя по всему, ты ${data}`;
                     this.update({
-                        text: "скажи как тебя зовут?",
+                        text,
                         buttons: [
                             [{ text: "назад", page: "index" }],
                         ]
