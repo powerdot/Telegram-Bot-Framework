@@ -23,11 +23,11 @@ let page: PageExport = ({ db, config, paginator }) => {
                             [{ text: "да или нет", page: "yesornot" }],
                             [{ text: "storage test", action: "storage" }],
                             [
-                                { text: "data1", action: "datatest", data: "asdasdasd" },
-                                { text: "data2", action: "datatest", data: 23 },
-                                { text: "data3", action: "datatest", data: { name: 'sdsdffsdf-sdffsd', id: '33343434' } },
-                                { text: "data4", action: "datatest", data: [{ name: 'sdsdfffsd', id: '333434' }] },
-                                { text: "data5", action: "datatest", data: true }
+                                { text: "str", action: "datatest", data: "asdasdasd" },
+                                { text: "num", action: "datatest", data: 23 },
+                                { text: "obj", action: "datatest", data: { name: 'sdsdffsdf-sdffsd', id: '33343434' } },
+                                { text: "arr", action: "datatest", data: [{ name: 'sdsdfffsd', id: '333434' }] },
+                                { text: "bool", action: "datatest", data: true }
                             ],
                         ]
                     })
