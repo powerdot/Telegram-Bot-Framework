@@ -8,7 +8,8 @@ import type {
     CallbackPath,
     Page,
     PageActionHandlerThis,
-    Buttons
+    MessageButtons,
+    PageActionData
 } from "../lib/types"
 let helpers = require("../lib/helpers");
 let keyboard_builder = require("../lib/helpers/keyboard_builder");
@@ -20,7 +21,7 @@ let clearAndOpenMainMenu = require('../lib/helpers/clearAndOpenMainMenu');
 // Telegram Bot Service
 require("../lib/removeCheck")();
 
-function routeToAction(id, action = 'main', data) {
+function routeToAction(id, action = 'main', data: PageActionData): string {
     let parsedData = data;
     if (data) {
         let type = typeof data;
@@ -53,7 +54,7 @@ function routeToAction(id, action = 'main', data) {
     return compiled;
 }
 
-function parseButtons(id: string, buttons: Buttons = []) {
+function parseButtons(id: string, buttons: MessageButtons = []) {
     let inline_buttons = [];
     for (let row of buttons) {
         if (!row) continue;

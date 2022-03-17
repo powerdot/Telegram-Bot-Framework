@@ -19,7 +19,7 @@ interface TBFContext extends Context {
 
 type PageActionArg = {
     ctx: TBFContext;
-    data?: string | number | object | Array<any> | boolean;
+    data?: PageActionData;
     text?: string;
 }
 
@@ -27,10 +27,12 @@ type ButtonsRowButton = {
     text: string;
     action?: string | Function;
     page?: string;
-    data?: string | number | object | Array<any> | boolean;
+    data?: PageActionData;
 }
 type ButtonsRow = Array<ButtonsRowButton>
-type Buttons = Array<ButtonsRow>
+type MessageButtons = Array<ButtonsRow>
+
+type PageActionData = string | number | object | Array<any> | boolean;
 
 type KeyboardRowButton = {
     text: string;
@@ -38,13 +40,13 @@ type KeyboardRowButton = {
 type KeyboardRow = Array<KeyboardRowButton>
 type Keyboard = Array<KeyboardRow>
 
-type PageActionHandlerThisSendArg = { text: string, buttons?: Buttons, keyboard?: Keyboard }
+type PageActionHandlerThisSendArg = { text: string, buttons?: MessageButtons, keyboard?: Keyboard }
 
 interface PageActionHandlerThisMethods {
     id: string;
     send: (arg: PageActionHandlerThisSendArg) => Promise<any>;
     update: (arg: PageActionHandlerThisSendArg) => Promise<any>;
-    goToAction: (action: string, data: string | number | object | Array<any> | boolean) => Promise<any>;
+    goToAction: (action: string, data: PageActionData) => Promise<any>;
     goToPage: (page: string) => Promise<any>;
     clearChat: () => Promise<any>;
     user: (arg?: { user_id }) => {
@@ -120,5 +122,6 @@ export {
     PageExport,
     DB,
     PageActionHandlerThis,
-    Buttons
+    MessageButtons,
+    PageActionData
 }
