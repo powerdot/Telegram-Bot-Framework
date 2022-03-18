@@ -3,17 +3,20 @@ import type {
     Page,
     PageActionHandlerThis,
     MessageButtons,
-    PageActionData
+    PageActionData,
+    DB,
+    PageExport,
 } from "./types"
 
 
 let helpers = require("./helpers");
 
-module.exports = ({ db }) => {
-
+module.exports = (
+    { db }: { db: DB }
+) => {
     let paginator = require("./paginator")({ db });
 
-    function routeToAction(id, action = 'main', data: PageActionData): string {
+    function routeToAction(id: string, action: string = 'main', data: PageActionData): string {
         let parsedData = data;
         if (data) {
             let type = typeof data;
@@ -82,8 +85,13 @@ module.exports = ({ db }) => {
         return action_fn;
     }
 
-    let _pages = paginator.list();
-    let pages = [];
+    let _pages: Array<{
+        module: PageExport,
+        path: string,
+    }> = paginator.list();
+
+    let pages: Array<Page> = [];
+
     for (let page of _pages) {
         let pageObject: Page = page.module({
             db,

@@ -85,7 +85,7 @@ type PageAction = PageActionHandler | {
 interface Page {
     id: string;
     name: string;
-    requirements: Array<string>;
+    requirements: Array<string>; // todo
     actions: {
         "main": PageAction;
         [key: string]: PageAction;
@@ -100,7 +100,7 @@ interface Page {
 
 
 type PageExportArg = {
-    db?: any;
+    db?: DB;
     config?: any;
     paginator?: any;
 }
@@ -161,6 +161,16 @@ interface DB {
         destroy: (user_id: number) => Promise<any>,
     }
 }
+
+
+interface PaginatorReturn {
+    check_requirements: (ctx: TBFContext, requirements, page_id: string) => Promise<any>;
+    clear_requirements_data: (ctx: TBFContext) => Promise<any>
+    list: () => Array<{ module: any, path: string }>
+    route: (page_id: string, to: string) => string
+}
+
+
 export {
     Telegraf,
     Markup,
@@ -175,5 +185,6 @@ export {
     MessageButtons,
     PageActionData,
     StartupChainInstances,
-    DB
+    DB,
+    PaginatorReturn,
 }
