@@ -15,7 +15,6 @@ type CallbackPath = {
 
 interface TBFContext extends TelegrafContext {
     CallbackPath?: CallbackPath | false
-    updateSubTypes?: Array<string>
     chat_id?: number | null
     routeTo?: string
 }

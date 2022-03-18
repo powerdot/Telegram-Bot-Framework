@@ -3,7 +3,6 @@ require('module-alias/register');
 let config = require('../config');
 
 import type {
-    TelegrafContext,
     TBFContext,
     StartupChainInstances,
     DB
