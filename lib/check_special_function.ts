@@ -5,6 +5,7 @@ module.exports = ({ db }) => {
         let specialFunction = specialFunctions.filter(x => x == first_arg)[0];
         args = Array.from(args);
         if (specialFunction) args = args.slice(1);
+        console.log('oldfunction', oldfunction);
         let a = await oldfunction.apply(null, args);
         switch (specialFunction) {
             case "delete":

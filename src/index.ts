@@ -3,8 +3,9 @@ require('module-alias/register');
 let config = require('../config');
 
 import type {
-    Context,
+    TelegrafContext,
     TBFContext,
+    StartupChainInstances
 } from "../lib/types"
 let helpers = require("../lib/helpers");
 let moment = require('moment');
@@ -12,7 +13,7 @@ let moment = require('moment');
 let clearAndOpenMainMenu = require('../lib/helpers/clearAndOpenMainMenu');
 
 // load instances
-require("../lib/startup_chain")().then(({ bot, app, database }) => {
+require("../lib/startup_chain")().then(({ bot, app, database }: StartupChainInstances) => {
     let db = require("../lib/helpers/db")(bot, database);
     let { pages, paginator } = require("../lib/page_loader")({ db });
     let checkSpecialFunction = require("../lib/check_special_function")({ db });
@@ -66,8 +67,8 @@ require("../lib/startup_chain")().then(({ bot, app, database }) => {
         await clearAndOpenMainMenu(ctx);
     });
 
-    bot.use(async function (ctx, next) {
-        let message_text = ctx?.update?.message?.text;
+    bot.use(async function (ctx: TBFContext, next) {
+        let message_text = ctx?.message?.text;
         if (message_text) {
             if (message_text == '/start') {
                 await db.messages.addToRemoveMessages(ctx, ctx.update.message);
@@ -85,25 +86,19 @@ require("../lib/startup_chain")().then(({ bot, app, database }) => {
                     console.log("\t📛", 'index page not found');
                     process.exit();
                 }
-                ctx.update = {
-                    callback_query: {
-                        data: 'index',
-                        message: {
-                            chat: {
-                                id: ctx.update.message.chat.id
-                            }
-                        }
-                    }
-                }
+
+                ctx.chat_id = ctx.update.message.chat.id;
+                ctx.routeTo = 'index�main';
                 ctx.updateType = 'callback_query';
+
                 delete ctx.update.message;
             }
         }
         return next();
     });
 
-    bot.use(async function (_ctx: Context, next) {
-        let ctx = _ctx as TBFContext;
+    bot.use(async function (_ctx: TBFContext, next) {
+        let ctx = _ctx;
         for (; ;) {
             ctx.CallbackPath = helpers.parseCallbackPath(ctx);
             for (let page of pages) await page.call(ctx);

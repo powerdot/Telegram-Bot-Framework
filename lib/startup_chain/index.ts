@@ -1,19 +1,15 @@
 require('dotenv').config()
 
-interface Instances {
-    bot: any;
-    database: any;
-    app: any;
-}
+import { MongoDataBase, Telegraf, StartupChainInstances } from "../types";
 
-function activate(): Promise<Instances> {
+function activate(): Promise<StartupChainInstances> {
     return new Promise(async resolve => {
 
         let _bot = require("./bot");
-        let _db = require("./db");
+        let _database = require("./database");
         let _webserver = require("./webserver");
 
-        let instances: Instances = {
+        let instances: StartupChainInstances = {
             bot: undefined,
             database: undefined,
             app: undefined
@@ -21,9 +17,9 @@ function activate(): Promise<Instances> {
 
         _bot().then((bot) => {
             instances.bot = bot;
-            return _db()
-        }).then((db) => {
-            instances.database = db;
+            return _database()
+        }).then((database) => {
+            instances.database = database;
             return _webserver()
         }).then((webserver) => {
             instances.app = webserver;

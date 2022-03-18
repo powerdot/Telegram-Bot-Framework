@@ -1,4 +1,5 @@
-import { Telegraf, Markup, Context } from 'telegraf';
+import { Telegraf, Markup, Context as TelegrafContext } from 'telegraf';
+import { Application as ExpressApp } from "express"
 
 type CallbackPathRoute = {
     route: string;
@@ -12,9 +13,11 @@ type CallbackPath = {
     next: string | false
 }
 
-interface TBFContext extends Context {
-    CallbackPath: CallbackPath | false
-    updateSubTypes: Array<string>
+interface TBFContext extends TelegrafContext {
+    CallbackPath?: CallbackPath | false
+    updateSubTypes?: Array<string>
+    chat_id?: number | null
+    routeTo?: string
 }
 
 type PageActionArg = {
@@ -107,21 +110,35 @@ interface PageExport {
     (arg: PageExportArg): Page;
 }
 
-interface DB {
 
+import { MongoClient, Collection as MongoCollection } from 'mongodb/mongodb';
+interface MongoDataBase {
+    client: MongoClient,
+    collection_UserData: MongoCollection,
+    collection_BotMessageHistory: MongoCollection,
+    collection_UserMessageHistory: MongoCollection,
+    collection_Data: MongoCollection,
+    collection_Users: MongoCollection
+}
+
+interface StartupChainInstances {
+    bot: Telegraf<TBFContext>;
+    database: MongoDataBase;
+    app: ExpressApp;
 }
 
 export {
     Telegraf,
     Markup,
-    Context,
+    TelegrafContext,
     TBFContext,
     CallbackPath,
     CallbackPathRoute,
     Page,
     PageExport,
-    DB,
+    MongoDataBase,
     PageActionHandlerThis,
     MessageButtons,
-    PageActionData
+    PageActionData,
+    StartupChainInstances
 }

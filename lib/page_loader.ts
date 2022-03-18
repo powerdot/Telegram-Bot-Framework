@@ -121,7 +121,9 @@ module.exports = ({ db }) => {
                 } else {
                     options.reply_markup.keyboard = [];
                 }
-                return await this.ctx.replyWithMarkdown(text, options);
+                let message = await this.ctx.telegram.sendMessage(helpers.getChatId(this.ctx), text, options);
+                db.messages.addToRemoveMessages(this.ctx, [message], false)
+                return message;
             },
             async update({ text = "", buttons = [], keyboard = [] }) {
                 if (!text) throw new Error("update() text is empty");
