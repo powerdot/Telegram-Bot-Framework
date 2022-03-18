@@ -127,6 +127,41 @@ interface StartupChainInstances {
     app: ExpressApp;
 }
 
+interface DB {
+    bot: Telegraf<TBFContext>,
+    messages: {
+        bot: {
+            getLastMessage: (ctx: TBFContext) => Promise<any>;
+        },
+        user: {
+            addUserMessage: (ctx: TBFContext, message?: any) => Promise<any>;
+            getUserMessages: (ctx: TBFContext) => Promise<any>;
+        },
+        addToRemoveMessages: (ctx: TBFContext, message_or_arrayMessages: Array<object> | object, trash?: boolean | undefined) => Promise<any>;
+        removeMessages: (ctx: TBFContext, onlyTrash?: boolean | undefined) => Promise<any>;
+        markAllMessagesAsTrash: (ctx: TBFContext) => Promise<any>,
+        findOldMessages: (unix_lim: number) => Promise<any>;
+    },
+
+    setValue: (ctx: TBFContext, key: string, value: any) => Promise<any>,
+    getValue: (ctx: TBFContext, key: string) => Promise<any>,
+    removeValue: (ctx: TBFContext, key: string) => Promise<any>,
+
+    data: {
+        get: (type: any, query: any, sorting: any) => Promise<any>,
+        add: (type: any, data: any) => Promise<any>,
+        update: (_id: any, data: any) => Promise<any>,
+    },
+    users: {
+        list: () => Promise<any>,
+    },
+    user: {
+        data: {
+            get: (user_id: number) => Promise<any>,
+        },
+        destroy: (user_id: number) => Promise<any>,
+    }
+}
 export {
     Telegraf,
     Markup,
@@ -140,5 +175,6 @@ export {
     PageActionHandlerThis,
     MessageButtons,
     PageActionData,
-    StartupChainInstances
+    StartupChainInstances,
+    DB
 }

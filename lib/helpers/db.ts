@@ -240,25 +240,12 @@ module.exports = (
     getValue,
     removeValue,
 
-    webService: {
-      secureTokens: {
-        getData: _webService_getDataFromToken,
-        set: _webService_setDataToken,
-        lastUserToken: _webService_getLastUserToken,
-        remove: _webService_removeUserTokens
-      }
-    },
     data: {
       get: _DataGet,
       add: _DataAdd,
       update: _DataUpdate
     },
     users: {
-      group: {
-        set: _Users_setGroup,
-        get: _Users_getGroup,
-        getAllByGroup: _Users_getByGroup
-      },
       list: _Users_list
     },
     user: {

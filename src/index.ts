@@ -5,7 +5,8 @@ let config = require('../config');
 import type {
     TelegrafContext,
     TBFContext,
-    StartupChainInstances
+    StartupChainInstances,
+    DB
 } from "../lib/types"
 let helpers = require("../lib/helpers");
 let moment = require('moment');
@@ -14,7 +15,7 @@ let clearAndOpenMainMenu = require('../lib/helpers/clearAndOpenMainMenu');
 
 // load instances
 require("../lib/startup_chain")().then(({ bot, app, database }: StartupChainInstances) => {
-    let db = require("../lib/helpers/db")(bot, database);
+    let db: DB = require("../lib/helpers/db")(bot, database);
     let { pages, paginator } = require("../lib/page_loader")({ db });
     let checkSpecialFunction = require("../lib/check_special_function")({ db });
     let resetUser = require("../lib/reset_user")({ db, paginator });
