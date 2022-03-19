@@ -6,6 +6,7 @@ import type {
     PageActionData,
     DB,
     PageExport,
+    PageActionHandler,
 } from "./types"
 
 
@@ -42,7 +43,7 @@ module.exports = (
 
         let compiled_bytes_length = Buffer.byteLength(compiled, 'utf8');
         if (compiled_bytes_length > 64) {
-            throw new Error(`Data is too long. Allowed 64 bytes. Now is ${compiled_bytes_length}.\nTry shortening the title of page or action or cut sending data.`);
+            throw new Error(`Data is too long. Allowed 64 bytes. Now is ${compiled_bytes_length}.\nTry shortening the title of page or action or cut sending data.\n${compiled}`);
         }
         // console.log('routeToAction data', compiled, compiled_bytes_length)
 
@@ -80,7 +81,7 @@ module.exports = (
         return inline_buttons;
     }
 
-    function extractHandler(action) {
+    function extractHandler(action): PageActionHandler {
         let action_fn = typeof action == "function" ? action : action.handler;
         return action_fn;
     }
@@ -245,7 +246,7 @@ module.exports = (
                         if (action.clearChat) await db.messages.removeMessages(ctx);
                         let action_fn = extractHandler(action);
                         await action_fn.bind({ ...binding, ctx })({ ctx, data });
-                        await db.setValue(ctx, "step", pageObject.id + "-" + callbackData.action);
+                        await db.setValue(ctx, "step", pageObject.id + "�" + callbackData.action);
                     } else {
                         throw ("action not found: " + callbackData.action);
                     }
@@ -259,10 +260,10 @@ module.exports = (
                 pageObject.ctx = ctx;
                 if (ctx.updateSubTypes.length != 1 || ctx.updateSubTypes[0] != 'text') return;
                 let step = await db.getValue(ctx, 'step');
-                let page = step.split("-")[0];
+                let page = step.split("�")[0];
                 if (page != pageObject.id) return;
-                let action = step.split("-")[1];
-
+                let action = step.split("�")[1];
+                console.log("onMessage", page, action);
                 try {
                     let text_handler = pageObject.actions[action].textHandler;
                     await db.messages.addToRemoveMessages(ctx, ctx.update.message, true);
@@ -291,6 +292,13 @@ module.exports = (
             }
         }
         if (!pageObject.onOpen) pageObject.onOpen = async () => { }
+        if (!pageObject.open) pageObject.open = async function (ctx: TBFContext) {
+            let action_fn = extractHandler(pageObject.actions.main);
+            console.log("open", action_fn);
+            await db.messages.removeMessages(ctx);
+            await action_fn.bind({ ...binding, ctx })({ ctx });
+            await db.setValue(ctx, "step", pageObject.id + "�main");
+        }
         pages.push(pageObject);
     }
     console.log("✅", `Loader: ${pages.length} ${pages.length == 1 ? 'page' : 'pages'} loaded!`);

@@ -10,8 +10,6 @@ module.exports = (
   }) => {
   const config = require('../../config.js');
   let helpers = require("./index");
-  const TokenGenerator = require('uuid-token-generator');
-  const tokgen = new TokenGenerator(256, TokenGenerator.BASE62);
   let moment = require("moment");
   let ObjectID = require('mongodb').ObjectID;
 
@@ -106,34 +104,7 @@ module.exports = (
     return await collection_WebSerciveSecureTokens.findOne({ token_id })
   }
 
-  /**
-   * Создание токена, который хранит в себе данные
-   * @param {Object} data Данные, сохраняемые за токеном
-   * @returns Token ID
-   */
-  async function _webService_setDataToken(data, removeOldTokens) {
-    let new_token_id = tokgen.generate();
-    data.token_id = new_token_id;
-    data.createdAt = moment();
-    if (removeOldTokens) await collection_WebSerciveSecureTokens.remove({ user_id: data.user_id, createdAt: { $lte: moment().add(-1, 'minute') } });
-    await collection_WebSerciveSecureTokens.insertOne(data).catch(function (e) {
-      console.error('_webService_setDataToken error', e)
-    });
-    // console.log("> token created", new_token_id);
 
-    return new_token_id;
-  }
-
-  async function _webService_getLastUserToken(ctx) {
-    let user_id = helpers.getChatId(ctx);
-    let f = await collection_WebSerciveSecureTokens.find({ user_id }).sort({ _id: -1 }).limit(1).toArray();
-    return f.length == 0 ? false : f[0].token_id;
-  }
-
-  async function _webService_removeUserTokens(ctx) {
-    let user_id = helpers.getChatId(ctx);
-    await collection_WebSerciveSecureTokens.remove({ user_id });
-  }
 
   /**
    * Сохранение какой-либо информации, например, отзыв
@@ -163,31 +134,6 @@ module.exports = (
     return result;
   }
 
-  async function _Users_setGroup(user_id, group) {
-    user_id = helpers.getChatId(user_id);
-    let u = await collection_Users.findOne({ user_id });
-    if (!u) {
-      await collection_Users.insertOne({ user_id, group });
-    } else {
-      await collection_Users.updateOne({ user_id }, { $set: { group } }, { upsert: true });
-    }
-  }
-  async function _Users_getGroup(user_id) {
-    user_id = helpers.getChatId(user_id);
-    if (config.admins[user_id]) return config.admins[user_id];
-    let u = await collection_Users.findOne({ user_id });
-    // console.log("u:",user_id,u)
-    if (!u) return 'main';
-    if (!u.group) u.group = "main";
-    if (u.group == "") u.group = "main";
-    return u.group;
-  }
-  async function _Users_getByGroup(group) {
-    let us = await collection_Users.find({ group }).toArray();
-    if (!us) us = [];
-    return us;
-  }
-
   async function _Users_list() {
     let us = await collection_Users.find({}).toArray();
     if (!us) us = [];
@@ -203,11 +149,15 @@ module.exports = (
     return user_object;
   }
 
-  async function _UserDestroy(user_id) {
-    await collection_Users.remove({ user_id });
-    await collection_UserData.remove({ user_id });
-    await collection_UserMessageHistory.remove({ user_id });
-    await collection_BotMessageHistory.remove({ user_id });
+  async function _UserDestroy(chatId) {
+    await collection_Users.deleteMany({ chatId });
+    await collection_UserData.deleteMany({ chatId });
+    await collection_UserMessageHistory.deleteMany({ chatId });
+    await collection_BotMessageHistory.deleteMany({ chatId });
+  }
+
+  async function _UserDataDestroy(chatId) {
+    await collection_UserData.deleteMany({ chatId });
   }
 
   /**
@@ -251,6 +201,7 @@ module.exports = (
     user: {
       data: {
         get: _UserData_get,
+        destroy: _UserDataDestroy
       },
       destroy: _UserDestroy
     }

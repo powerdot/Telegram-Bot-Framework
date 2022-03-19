@@ -95,7 +95,8 @@ interface Page {
     ctx?: TBFContext
     call?: (ctx: TBFContext) => Promise<any>
     trigger?: (ctx: TBFContext) => Promise<any>
-    onOpen?: (ctx: TBFContext) => Promise<any>
+    onOpen?: (ctx: TBFContext) => Promise<any>,
+    open?: (ctx: TBFContext) => Promise<any>,
 }
 
 
@@ -156,9 +157,10 @@ interface DB {
     },
     user: {
         data: {
-            get: (user_id: number) => Promise<any>,
+            get: (chatId: number) => Promise<any>,
+            destroy: (chatId: number) => Promise<any>,
         },
-        destroy: (user_id: number) => Promise<any>,
+        destroy: (chatId: number) => Promise<any>,
     }
 }
 
@@ -170,6 +172,20 @@ interface PaginatorReturn {
     route: (page_id: string, to: string) => string
 }
 
+interface TBFPromiseReturn {
+    bot: Telegraf<TBFContext>;
+    app: ExpressApp;
+    database: MongoDataBase;
+    db: DB;
+    pages: Page[]
+}
+
+interface TBF {
+    create: (arg?: {
+        telegramToken?: string;
+        webServer?: any
+    }) => Promise<TBFPromiseReturn>
+}
 
 export {
     Telegraf,
@@ -182,9 +198,12 @@ export {
     PageExport,
     MongoDataBase,
     PageActionHandlerThis,
+    PageActionHandler,
     MessageButtons,
     PageActionData,
     StartupChainInstances,
     DB,
     PaginatorReturn,
+    TBF,
+    TBFPromiseReturn
 }
