@@ -1,5 +1,6 @@
 import { Telegraf, Markup, Context as TelegrafContext } from 'telegraf';
 import { Application as ExpressApp } from "express"
+import * as tt from 'telegraf/typings/telegram-types';
 
 type CallbackPathRoute = {
     route: string;
@@ -15,8 +16,17 @@ type CallbackPath = {
 
 interface TBFContext extends TelegrafContext {
     CallbackPath?: CallbackPath | false
-    chat_id?: number | null
+    chatId?: number | null
     routeTo?: string
+    routing: {
+        type: string
+        page?: string
+        action?: string
+        data?: string
+        step?: string
+        next_step?: string
+        message?: tt.Message
+    }
 }
 
 type PageActionArg = {
@@ -94,7 +104,6 @@ interface Page {
     onMessage?: (ctx: TBFContext) => Promise<any>
     ctx?: TBFContext
     call?: (ctx: TBFContext) => Promise<any>
-    trigger?: (ctx: TBFContext) => Promise<any>
     onOpen?: (ctx: TBFContext) => Promise<any>,
     open?: (ctx: TBFContext) => Promise<any>,
 }
@@ -158,9 +167,9 @@ interface DB {
     user: {
         data: {
             get: (chatId: number) => Promise<any>,
-            destroy: (chatId: number) => Promise<any>,
+            destroy: (ctx: TBFContext) => Promise<any>,
         },
-        destroy: (chatId: number) => Promise<any>,
+        destroy: (ctx: TBFContext) => Promise<any>,
     }
 }
 
@@ -177,7 +186,8 @@ interface TBFPromiseReturn {
     app: ExpressApp;
     database: MongoDataBase;
     db: DB;
-    pages: Page[]
+    pages: Page[],
+    openPage: (arg: { ctx: TBFContext, pageId: string }) => Promise<Error | boolean>;
 }
 
 interface TBF {

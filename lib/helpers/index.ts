@@ -5,13 +5,6 @@ import type {
   CallbackPathRoute
 } from "../types/"
 
-function getChatId(ctx: TBFContext) {
-  if (typeof ctx == 'string') return parseInt(ctx);
-  if (typeof ctx == 'number') return ctx;
-  if (ctx?.chat_id) return ctx.chat_id;
-  let chat_data = ctx?.update?.message || ctx?.callbackQuery?.message || ctx?.update?.callback_query?.message;
-  return chat_data.chat.id
-}
 
 function declOfNum(number: number, titles: string[]) {
   let cases = [2, 0, 1, 1, 1, 2];
@@ -51,7 +44,6 @@ function parseCallbackPath(ctx: TBFContext) {
 }
 
 module.exports = {
-  getChatId,
   declOfNum,
   check_working_hours: require("./check_working_hours"),
   tastes: require("./tastes"),

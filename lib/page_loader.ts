@@ -9,6 +9,7 @@ import type {
     PageActionHandler,
 } from "./types"
 
+import dataPacker from "./dataPacker"
 
 let helpers = require("./helpers");
 
@@ -18,26 +19,7 @@ module.exports = (
     let paginator = require("./paginator")({ db });
 
     function routeToAction(id: string, action: string = 'main', data: PageActionData): string {
-        let parsedData = data;
-        if (data) {
-            let type = typeof data;
-            switch (type) {
-                case "string":
-                    parsedData = "S" + data;
-                    break;
-                case "number":
-                    parsedData = "N" + data.toString();
-                    break;
-                case "boolean":
-                    parsedData = "B" + data.toString();
-                    break;
-                case "object":
-                    parsedData = "O" + JSON.stringify(data);
-                    break;
-                default:
-                    throw new Error("Unsupported data type");
-            }
-        }
+        let parsedData = dataPacker.packData(data);
 
         let compiled = `${id}�${action}${parsedData ? ('�' + parsedData) : ''}`;
 
@@ -130,12 +112,12 @@ module.exports = (
                 } else {
                     options.reply_markup.keyboard = [];
                 }
-                let message = await this.ctx.telegram.sendMessage(helpers.getChatId(this.ctx), text, options);
+                let message = await this.ctx.telegram.sendMessage(this.ctx.chatId, text, options);
                 db.messages.addToRemoveMessages(this.ctx, [message], false)
                 return message;
             },
             async update({ text = "", buttons = [], keyboard = [] }) {
-                if (!text) throw new Error("update() text is empty");
+                if (text === undefined) throw new Error("update() text is empty");
                 let options = {
                     reply_markup: {
                         inline_keyboard: [],
@@ -159,7 +141,6 @@ module.exports = (
             async goToPage(page, action = "main") {
                 let found_page = pages.find(x => x.id == page);
                 if (found_page) {
-                    console.log('goToPage found_page', found_page);
                     let action_fn = extractHandler(found_page.actions[action]);
                     action_fn.bind({ ...this, ...{ id: page } })({ ctx: this.ctx });
                 } else {
@@ -183,24 +164,14 @@ module.exports = (
                 let _this: PageActionHandlerThis = this;
                 return {
                     async get() {
-                        let chat_id = user_id || helpers.getChatId(_this.ctx);
+                        let chat_id = user_id || _this.ctx.chatId;
                         return db.user.data.get(chat_id);
                     },
-                    async list() {
-                        return db.users.list();
-                    },
-                    async getValue(key) {
-                        return db.getValue(user_id || _this.ctx, key);
-                    },
-                    async setValue(key, value) {
-                        return db.setValue(user_id || _this.ctx, key, value);
-                    },
-                    async removeValue(key) {
-                        return db.removeValue(user_id || _this.ctx, key);
-                    },
-                    async destroy() {
-                        return db.user.destroy(helpers.getChatId(user_id || _this.ctx));
-                    },
+                    list: async () => db.users.list(),
+                    getValue: async (key) => db.getValue(user_id || _this.ctx, key),
+                    setValue: async (key, value) => db.setValue(user_id || _this.ctx, key, value),
+                    removeValue: async (key) => db.removeValue(user_id || _this.ctx, key),
+                    destroy: async () => db.user.destroy(user_id || _this.ctx.chatId),
                 }
             }
         }
@@ -220,32 +191,9 @@ module.exports = (
                     if (!callbackData.action) callbackData.action = "main";
                     let action = pageObject.actions[callbackData.action];
                     if (action) {
-                        let raw_data = callbackData.data ? callbackData.data : "";
-                        let data: any;
-                        if (raw_data) {
-                            let data_type = raw_data[0];
-                            let cleared = raw_data.substring(1);
-                            switch (data_type) {
-                                case "S":
-                                    data = cleared;
-                                    break;
-                                case "N":
-                                    data = Number(cleared);
-                                    break;
-                                case "B":
-                                    data = cleared.toLocaleLowerCase() === "true";
-                                    break;
-                                case "O":
-                                    data = JSON.parse(cleared);
-                                    break;
-                                default:
-                                    data = cleared;
-                                    break;
-                            }
-                        }
                         if (action.clearChat) await db.messages.removeMessages(ctx);
                         let action_fn = extractHandler(action);
-                        await action_fn.bind({ ...binding, ctx })({ ctx, data });
+                        await action_fn.bind({ ...binding, ctx })({ ctx, data: ctx.routing.data });
                         await db.setValue(ctx, "step", pageObject.id + "�" + callbackData.action);
                     } else {
                         throw ("action not found: " + callbackData.action);
@@ -257,12 +205,9 @@ module.exports = (
         }
         if (!pageObject.onMessage) {
             pageObject.onMessage = async (ctx: TBFContext) => {
-                pageObject.ctx = ctx;
                 if (ctx.updateSubTypes.length != 1 || ctx.updateSubTypes[0] != 'text') return;
-                let step = await db.getValue(ctx, 'step');
-                let page = step.split("�")[0];
-                if (page != pageObject.id) return;
-                let action = step.split("�")[1];
+                let page = ctx.routing.page;
+                let action = ctx.routing.action;
                 console.log("onMessage", page, action);
                 try {
                     let text_handler = pageObject.actions[action].textHandler;
@@ -281,20 +226,14 @@ module.exports = (
         }
         if (!pageObject.call) {
             pageObject.call = async (ctx) => {
-                if (ctx.updateType == 'callback_query') await pageObject.onCallbackQuery(ctx);
-                if (ctx.updateType == 'message') await pageObject.onMessage(ctx);
-            }
-        }
-        if (!pageObject.trigger) {
-            pageObject.trigger = async (ctx) => {
-                if (ctx.updateType == 'callback_query') await pageObject.onCallbackQuery(ctx);
-                if (ctx.updateType == 'message') await pageObject.onMessage(ctx);
+                console.log("call", pageObject.id, ctx.routing);
+                if (ctx.routing.type == 'callback_query') await pageObject.onCallbackQuery(ctx);
+                if (ctx.routing.type == 'message') await pageObject.onMessage(ctx);
             }
         }
         if (!pageObject.onOpen) pageObject.onOpen = async () => { }
         if (!pageObject.open) pageObject.open = async function (ctx: TBFContext) {
             let action_fn = extractHandler(pageObject.actions.main);
-            console.log("open", action_fn);
             await db.messages.removeMessages(ctx);
             await action_fn.bind({ ...binding, ctx })({ ctx });
             await db.setValue(ctx, "step", pageObject.id + "�main");

@@ -1,3 +1,5 @@
+import type { TBFContext } from "../types"
+
 module.exports = (
   bot,
   { client,
@@ -13,48 +15,63 @@ module.exports = (
   let moment = require("moment");
   let ObjectID = require('mongodb').ObjectID;
 
-
-  async function getValue(ctx, key) {
-    let data = await collection_UserData.findOne({ chatId: helpers.getChatId(ctx), name: key });
+  async function getValue(ctx: TBFContext, key) {
+    let data = await collection_UserData.findOne({ chatId: ctx.chatId, name: key });
     data = data ? data.value : false;
     console.log("[GET value]", key, '->', data);
     return data;
   }
 
-  async function setValue(ctx, key, value) {
+  async function setValue(ctx: TBFContext, key, value) {
     console.log("[SET value]", key, "=", value)
-    return await collection_UserData.updateOne({ name: key, chatId: helpers.getChatId(ctx) }, { $set: { name: key, chatId: helpers.getChatId(ctx), value } }, { upsert: true });
+    return await collection_UserData.updateOne({ name: key, chatId: ctx.chatId }, { $set: { name: key, chatId: ctx.chatId, value } }, { upsert: true });
   }
 
-  async function removeValue(ctx, key) {
-    return await collection_UserData.remove({ name: key, chatId: helpers.getChatId(ctx) });
+  async function removeValue(ctx: TBFContext, key) {
+    return await collection_UserData.remove({ name: key, chatId: ctx.chatId });
   }
 
-  async function removeMessages(ctx, onlyTrash) {
-    let chatId = helpers.getChatId(ctx);
+  async function removeMessages(ctx: TBFContext, onlyTrash) {
+    let chatId = ctx.chatId;
     let query = { chatId };
     let queryTrash = { chatId, trash: onlyTrash };
-    let currentMessagesToRemove = await (await collection_BotMessageHistory.find(onlyTrash ? queryTrash : query)).toArray();
+    let currentBotMessagesToRemove = await (await collection_BotMessageHistory.find(onlyTrash ? queryTrash : query)).toArray();
+    console.log("[removeBotMessages]", currentBotMessagesToRemove.length, "messages to remove");
     // console.log("currentMessagesToRemove:", currentMessagesToRemove);
-    if (currentMessagesToRemove.length == 0) return;
-    for (let currentMessageToRemove of currentMessagesToRemove) {
-      let messageId = currentMessageToRemove.messageId;
-      if (!messageId) continue;
-      //console.log("removing", messageId)
-      try {
-        bot.telegram.deleteMessage(chatId, messageId).catch(e => { });
-      } catch (error) {
-        // console.error("error deleting messageId:", chatId, messageId)
+    if (currentBotMessagesToRemove.length != 0) {
+      for (let currentMessageToRemove of currentBotMessagesToRemove) {
+        let messageId = currentMessageToRemove.messageId;
+        if (!messageId) continue;
+        console.log("removing", messageId)
+        try {
+          bot.telegram.deleteMessage(chatId, messageId).catch(e => { });
+        } catch (error) {
+          // console.error("error deleting messageId:", chatId, messageId)
+        }
+        collection_BotMessageHistory.deleteOne({ chatId, messageId });
       }
-      collection_BotMessageHistory.deleteOne({ chatId, messageId });
-      collection_UserMessageHistory.deleteOne({ chatId, messageId });
+    }
+    let currentUserMessagesToRemove = await (await collection_UserMessageHistory.find(onlyTrash ? queryTrash : query)).toArray();
+    console.log("[removeUserMessages]", currentUserMessagesToRemove.length, "messages to remove");
+    if (currentUserMessagesToRemove.length != 0) {
+      for (let currentMessageToRemove of currentUserMessagesToRemove) {
+        let messageId = currentMessageToRemove.messageId;
+        if (!messageId) continue;
+        console.log("removing", messageId)
+        try {
+          bot.telegram.deleteMessage(chatId, messageId).catch(e => { });
+        } catch (error) {
+          // console.error("error deleting messageId:", chatId, messageId)
+        }
+        collection_UserMessageHistory.deleteOne({ chatId, messageId });
+      }
     }
     return;
   }
 
-  async function addToRemoveMessages(ctx, message_or_arrayMessages, trash) {
+  async function addToRemoveMessages(ctx: TBFContext, message_or_arrayMessages, trash) {
     if (trash === undefined) trash = false;
-    let chatId = helpers.getChatId(ctx);
+    let chatId = ctx.chatId;
     let messages = [];
     if (!Array.isArray(message_or_arrayMessages)) message_or_arrayMessages = [message_or_arrayMessages];
     messages = message_or_arrayMessages;
@@ -66,31 +83,31 @@ module.exports = (
     }
   }
 
-  async function markAllMessagesAsTrash(ctx) {
-    let chatId = helpers.getChatId(ctx);
+  async function markAllMessagesAsTrash(ctx: TBFContext) {
+    let chatId = ctx.chatId;
     let old_msgs = await collection_BotMessageHistory.find({ chatId }).toArray();
     let usr_msgs = await getUserMessages(ctx);
     let msgs = [...old_msgs, ...usr_msgs];
     for (let old_msg of msgs) {
-      await addToRemoveMessages(chatId, old_msg.message, true);
+      await addToRemoveMessages(ctx, old_msg.message, true);
     }
   }
 
-  async function addUserMessage(ctx) {
-    let chatId = helpers.getChatId(ctx);
+  async function addUserMessage(ctx: TBFContext) {
+    let chatId = ctx.chatId;
     let message = ctx.update.message
     await collection_UserMessageHistory.insertOne({ chatId, message, messageId: message.message_id });
   }
 
-  async function getUserMessages(ctx) {
-    let chatId = helpers.getChatId(ctx);
+  async function getUserMessages(ctx: TBFContext) {
+    let chatId = ctx.chatId;
     let messages = await collection_UserMessageHistory.find({ chatId }).toArray();
     if (!messages) messages = [];
     return messages;
   }
 
-  async function getLastMessage(ctx) {
-    let chatId = helpers.getChatId(ctx);
+  async function getLastMessage(ctx: TBFContext) {
+    let chatId = ctx.chatId;
     let msg = await collection_BotMessageHistory.find({ chatId }).sort({ messageId: -1 }).toArray();
     if (msg) {
       msg = msg.length == 0 ? false : msg[0];
@@ -149,15 +166,17 @@ module.exports = (
     return user_object;
   }
 
-  async function _UserDestroy(chatId) {
-    await collection_Users.deleteMany({ chatId });
-    await collection_UserData.deleteMany({ chatId });
-    await collection_UserMessageHistory.deleteMany({ chatId });
-    await collection_BotMessageHistory.deleteMany({ chatId });
+  async function _UserDestroy(ctx: TBFContext) {
+    await _UserDataDestroy(ctx)
+    await collection_Users.deleteMany({ chatId: ctx.chatId });
+    await collection_UserMessageHistory.deleteMany({ chatId: ctx.chatId });
+    await collection_BotMessageHistory.deleteMany({ chatId: ctx.chatId });
   }
 
-  async function _UserDataDestroy(chatId) {
-    await collection_UserData.deleteMany({ chatId });
+  async function _UserDataDestroy(ctx: TBFContext) {
+    await collection_UserData.deleteMany({ chatId: ctx.chatId });
+    await setValue(ctx, "next_step", false);
+    await setValue(ctx, "step", false);
   }
 
   /**

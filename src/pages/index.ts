@@ -37,6 +37,11 @@ let page: PageExport = ({ db, config, paginator }) => {
                             ],
                         ]
                     })
+                },
+                textHandler() {
+                    this.send({
+                        text: "Привет - Привет!!",
+                    })
                 }
             },
             async datatest({ data }) {
