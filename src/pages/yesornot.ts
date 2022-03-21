@@ -1,13 +1,13 @@
-let moment = require("moment");
+import { PageExport } from "../../lib/types"
 
-module.exports = ({ db, config, paginator, routeToPage }) => {
+let page: PageExport = ({ db, config, paginator }) => {
     return {
         id: "yesornot",
         name: "да или нет",
         actions: {
             main: {
                 clearChat: true,
-                handler({ ctx }) {
+                handler() {
                     this.send({
                         text: "скажи, да или нет?",
                         keyboard: [
@@ -19,7 +19,7 @@ module.exports = ({ db, config, paginator, routeToPage }) => {
                 },
                 textHandler: {
                     clearChat: true,
-                    async handler({ ctx, text }) {
+                    async handler({ text }) {
                         if (text == "Да") {
                             this.send({
                                 text: "Супер! Ты сказал да!",
@@ -53,3 +53,5 @@ module.exports = ({ db, config, paginator, routeToPage }) => {
         }
     };
 }
+
+module.exports = page;

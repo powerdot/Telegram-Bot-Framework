@@ -1,6 +1,6 @@
-let moment = require("moment");
+import { PageExport } from "../../lib/types"
 
-module.exports = ({ db, config, paginator, routeToPage }) => {
+let page: PageExport = ({ db, config, paginator }) => {
     return {
         id: "random",
         name: "рандом",
@@ -17,7 +17,7 @@ module.exports = ({ db, config, paginator, routeToPage }) => {
             },
             r10({ ctx }) {
                 this.update({
-                    text: Math.floor(Math.random() * 10),
+                    text: Math.floor(Math.random() * 10).toString(),
                     buttons: [
                         [{ text: "еще раз!", action: "r10" }],
                         [{ text: "вернуться к числам", action: "main" }],
@@ -27,7 +27,7 @@ module.exports = ({ db, config, paginator, routeToPage }) => {
             },
             r100({ ctx }) {
                 this.update({
-                    text: Math.floor(Math.random() * 100),
+                    text: Math.floor(Math.random() * 100).toString(),
                     buttons: [
                         [{ text: "еще раз!", action: "r100" }],
                         [{ text: "вернуться к числам", action: "main" }],
@@ -38,3 +38,5 @@ module.exports = ({ db, config, paginator, routeToPage }) => {
         }
     };
 }
+
+module.exports = page;

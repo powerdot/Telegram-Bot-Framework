@@ -1,6 +1,8 @@
 let moment = require("moment");
 
-module.exports = ({ db, config, paginator, routeToPage }) => {
+import { PageExport } from "../../lib/types"
+
+let page: PageExport = ({ db, config, paginator }) => {
     return {
         id: "name",
         name: "имя",
@@ -29,3 +31,5 @@ module.exports = ({ db, config, paginator, routeToPage }) => {
         }
     };
 }
+
+module.exports = page;

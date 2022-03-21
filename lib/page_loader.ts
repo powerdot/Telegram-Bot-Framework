@@ -75,11 +75,17 @@ module.exports = (
     let pages: Array<Page> = [];
 
     for (let page of _pages) {
-        let pageObject: Page = page.module({
-            db,
-            config,
-            paginator,
-        });
+        let pageObject: Page;
+        try {
+            pageObject = page.module({
+                db,
+                config,
+                paginator,
+            })
+        } catch (error) {
+            console.log('📛', "Page loading error:", page.path, error);
+            continue;
+        }
         if (!pageObject.id) {
             console.error('📛', "Page without id:", page.path);
             continue;
