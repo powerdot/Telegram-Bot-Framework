@@ -1,14 +1,17 @@
 import { MongoClient, Collection as MongoCollection } from 'mongodb/mongodb';
 import { MongoDataBase } from '../types';
 
-module.exports = function () {
+module.exports = function ({
+    url,
+    dbName
+}) {
     return new Promise(async resolve => {
         const { MongoClient } = require('mongodb');
 
-        let url = process.env.MONGO_URL;
-        let database_name = process.env.MONGO_DB;
+        let _url = url;
+        let _database_name = dbName;
 
-        let client: MongoClient = new MongoClient(url);
+        let client: MongoClient = new MongoClient(_url);
         let collection_UserData: MongoCollection;
         let collection_BotMessageHistory: MongoCollection;
         let collection_UserMessageHistory: MongoCollection;
@@ -16,16 +19,16 @@ module.exports = function () {
         let collection_Users: MongoCollection;
         let collection_specialCommandsHistory: MongoCollection;
 
-        console.log("ℹ️ ", `Database (${database_name}) url: ${url}`);
+        console.log("ℹ️ ", `Database (${_database_name}) url: ${_url}`);
 
         try {
             await client.connect();
-            collection_UserData = client.db(database_name).collection("user_data");
-            collection_BotMessageHistory = client.db(database_name).collection("bot_message_history");
-            collection_Data = client.db(database_name).collection("other_data");
-            collection_Users = client.db(database_name).collection("users");
-            collection_UserMessageHistory = client.db(database_name).collection("user_message_history");
-            collection_specialCommandsHistory = client.db(database_name).collection("special_commands_history");
+            collection_UserData = client.db(_database_name).collection("user_data");
+            collection_BotMessageHistory = client.db(_database_name).collection("bot_message_history");
+            collection_Data = client.db(_database_name).collection("other_data");
+            collection_Users = client.db(_database_name).collection("users");
+            collection_UserMessageHistory = client.db(_database_name).collection("user_message_history");
+            collection_specialCommandsHistory = client.db(_database_name).collection("special_commands_history");
             resolve({
                 client,
                 collection_UserData,

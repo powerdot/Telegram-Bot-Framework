@@ -1,21 +1,30 @@
-require('dotenv').config()
 require('module-alias/register');
-let config = require('../config');
 
 import type {
     StartupChainInstances,
     DB,
     Page,
     TBFPromiseReturn,
-    TBFContext,
-    WebServerArgs
+    TBFArgs,
+    WebServerArgs,
 } from "./types"
 
-module.exports.create = ({ webServer, telegramToken }) => {
+module.exports.create = ({ webServer, telegram, mongo, config }: TBFArgs) => {
+
+    let default_config = {
+        pages: {
+            path: "./pages",
+        },
+        autoRemoveMessages: true,
+        debug: false
+    }
+
+    let _config = Object.assign(default_config, config);
+
     return new Promise(async (resolve, reject) => {
-        require("../lib/startup_chain")().then(async ({ bot, app, database }: StartupChainInstances) => {
+        require("../lib/startup_chain")({ webServer, telegram, mongo } as TBFArgs).then(async ({ bot, app, database }: StartupChainInstances) => {
             let db: DB = require("../lib/helpers/db")(bot, database);
-            let { pages }: { pages: Array<Page> } = require("../lib/page_loader")({ db });
+            let { pages }: { pages: Array<Page> } = require("../lib/page_loader")({ db, config: _config });
 
             bot.use(require("../lib/bot_middlewares/set_ids")());
 
@@ -42,11 +51,12 @@ module.exports.create = ({ webServer, telegramToken }) => {
 
             if (config.autoRemoveMessages) require("../lib/auto_remove_messages")({ db });
 
-            // Engine wheel
-            bot.use(require("../lib/bot_middlewares/wheel")({ db, pages }));
+            // Engine router
+            bot.use(require("../lib/bot_middlewares/router")({ db, pages }));
 
             // Starting web server
-            if (!webServer) app.use(webServer({ bot, db, config, pages, database } as WebServerArgs));
+            if (app && webServer?.module)
+                app.use(webServer.module({ bot, db, config, pages, database } as WebServerArgs));
         });
     });
 }

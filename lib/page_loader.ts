@@ -7,16 +7,15 @@ import type {
     DB,
     PageExport,
     PageActionHandler,
+    TBFConfig
 } from "./types"
 
 import dataPacker from "./dataPacker"
 
-let helpers = require("./helpers");
-
 module.exports = (
-    { db }: { db: DB }
+    { db, config }: { db: DB, config: TBFConfig }
 ) => {
-    let paginator = require("./paginator")({ db });
+    let paginator = require("./paginator")({ config });
 
     function routeToAction(id: string, action: string = 'main', data: PageActionData): string {
         let parsedData = dataPacker.packData(data);
@@ -78,7 +77,7 @@ module.exports = (
     for (let page of _pages) {
         let pageObject: Page = page.module({
             db,
-            config: require('../config'),
+            config,
             paginator,
         });
         if (!pageObject.id) {

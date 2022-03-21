@@ -1,26 +1,29 @@
-module.exports = function () {
+module.exports = function ({
+    token,
+    apiUrl
+}) {
     return new Promise(async resolve => {
         const Telegraf = require('telegraf');
 
-        let token = process.env.TOKEN;
-        if (!token) {
-            console.log('📛', 'Set token .env');
+        let _token = token;
+        if (!_token) {
+            console.log('📛', 'Set token');
             process.exit();
         } else {
             console.log("ℹ️ ", "Telegram token is set.");
         }
 
         let bot;
-        if (process.env.PROXY) {
-            bot = new Telegraf(token, {
+        if (apiUrl) {
+            bot = new Telegraf(_token, {
                 telegram: {
-                    apiRoot: process.env.PROXY
+                    apiRoot: apiUrl
                 }
             });
-            console.log("ℹ️ ", "Proxy installed", process.env.PROXY);
+            console.log("ℹ️ ", "ApiUrl installed", apiUrl);
         } else {
-            bot = new Telegraf(token);
-            console.log("ℹ️ ", "Bot without proxy");
+            bot = new Telegraf(_token);
+            console.log("ℹ️ ", "Bot without proxy and apiUrl");
         }
 
         bot.catch((err) => {

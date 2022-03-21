@@ -1,26 +1,31 @@
-module.exports = function () {
+module.exports = function ({
+    address,
+    port,
+    module,
+}) {
     // HTTP Service
     let express = require("express");
-    let address = process.env.ADDRESS;
-    if (!address) {
-        console.log('📛', 'Set address .env');
+    let _address = address;
+    if (!_address) {
+        console.log('📛', 'Set web server address');
         process.exit();
     } else {
-        console.log("ℹ️ ", "Bot's web server address:", address);
+        console.log("ℹ️ ", "Bot's web server address:", _address);
     }
 
-    let port = process.env.PORT;
+    let _port = port;
     if (!port) {
         console.log('📛', 'Set port .env');
         process.exit();
     } else {
-        console.log("ℹ️ ", "Bot's web server port:", port);
+        console.log("ℹ️ ", "Bot's web server port:", _port);
     }
 
     return new Promise(async resolve => {
+        if (!module) return resolve(undefined);
         let app = express();
         try {
-            app.listen(port, function () {
+            app.listen(_port, function () {
                 console.log("ℹ️ ", "Bot's web server is running");
                 resolve(app);
             })

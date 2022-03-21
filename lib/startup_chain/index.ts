@@ -1,34 +1,22 @@
-require('dotenv').config()
+import { MongoDataBase, Telegraf, StartupChainInstances, TBFArgs } from "../types";
 
-import { MongoDataBase, Telegraf, StartupChainInstances } from "../types";
-
-function activate(): Promise<StartupChainInstances> {
+function activate({ telegram, mongo, webServer }: TBFArgs): Promise<StartupChainInstances> {
     return new Promise(async resolve => {
-
         let _bot = require("./bot");
         let _database = require("./database");
         let _webserver = require("./webserver");
 
-        let instances: StartupChainInstances = {
-            bot: undefined,
-            database: undefined,
-            app: undefined
-        }
-
-        _bot().then((bot) => {
-            instances.bot = bot;
-            return _database()
-        }).then((database) => {
-            instances.database = database;
-            return _webserver()
-        }).then((webserver) => {
-            instances.app = webserver;
-            console.log("🚀 TBF is ready!");
-            resolve(instances);
-        }).catch((err) => {
-            console.error("💔 Error:", err);
+        try {
+            let instances: StartupChainInstances = {
+                bot: await _bot(telegram),
+                database: await _database(mongo),
+                app: (webServer && webServer.module) ? await _webserver(webServer) : undefined
+            }
+            return resolve(instances);
+        } catch (error) {
+            console.error("💔 Error:", error);
             process.exit(1);
-        })
+        }
     });
 }
 

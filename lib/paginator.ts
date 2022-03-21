@@ -1,12 +1,11 @@
-let config = require('../config.js');
 let fs = require("fs");
 let path = require("path");
 
-module.exports = function ({ db }) {
+module.exports = function ({ config }) {
     return {
         list: function () {
-            config.pages.path = config.pages.path[config.pages.path.length - 1] == '/' ? config.pages.path : (config.pages.path + "/");
-            let normalizedPath = path.join(__dirname, '../src', config.pages.path);
+            let pages_path = config.pages.path[config.pages.path.length - 1] == '/' ? config.pages.path : (config.pages.path + "/");
+            let normalizedPath = path.join(__dirname, '../src', pages_path);
             let csstts = [];
             fs.readdirSync(normalizedPath).forEach(function (file) {
                 let page_path = normalizedPath + file;

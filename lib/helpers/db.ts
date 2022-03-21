@@ -1,5 +1,8 @@
 import type { TBFContext, TelegramMessage, DB } from "../types"
 
+let moment = require("moment");
+let ObjectID = require('mongodb').ObjectID;
+
 module.exports = (
   bot,
   { client,
@@ -10,10 +13,6 @@ module.exports = (
     collection_Users,
     collection_specialCommandsHistory
   }): DB => {
-  const config = require('../../config.js');
-  let helpers = require("./index");
-  let moment = require("moment");
-  let ObjectID = require('mongodb').ObjectID;
 
   async function getValue(ctx: TBFContext, key) {
     let data = await collection_UserData.findOne({ chatId: ctx.chatId, name: key });

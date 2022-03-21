@@ -136,7 +136,7 @@ interface MongoDataBase {
 interface StartupChainInstances {
     bot: Telegraf<TBFContext>;
     database: MongoDataBase;
-    app: ExpressApp;
+    app: ExpressApp | undefined;
 }
 
 interface DB {
@@ -194,11 +194,33 @@ interface TBFPromiseReturn {
     openPage: (arg: { ctx: TBFContext, pageId: string }) => Promise<Error | boolean>;
 }
 
+interface TBFConfig {
+    pages?: {
+        path: string;
+    }
+    autoRemoveMessages?: boolean;
+    debug?: boolean;
+}
+
+interface TBFArgs {
+    telegram: {
+        token: string;
+        apiUrl?: string;
+    }
+    webServer?: {
+        address: string;
+        port: number | string;
+        module?: any;
+    },
+    mongo?: {
+        url: string;
+        dbName: string;
+    },
+    config?: TBFConfig
+}
+
 interface TBF {
-    create: (arg?: {
-        telegramToken?: string;
-        webServer?: any
-    }) => Promise<TBFPromiseReturn>
+    create: (arg?: TBFArgs) => Promise<TBFPromiseReturn>
 }
 
 interface WebServerArgs {
@@ -228,5 +250,7 @@ export {
     TBF,
     TBFPromiseReturn,
     WebServerArgs,
-    TelegramMessage
+    TelegramMessage,
+    TBFArgs,
+    TBFConfig
 }
