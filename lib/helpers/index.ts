@@ -45,8 +45,6 @@ function parseCallbackPath(ctx: TBFContext) {
 
 module.exports = {
   declOfNum,
-  check_working_hours: require("./check_working_hours"),
-  tastes: require("./tastes"),
   parseCallbackPath,
   serverIP: require("./server_ip")
 }

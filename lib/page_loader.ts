@@ -10,7 +10,7 @@ import type {
     TBFConfig
 } from "./types"
 
-import dataPacker from "./dataPacker"
+import dataPacker from "./data_packer"
 
 module.exports = (
     { db, config }: { db: DB, config: TBFConfig }

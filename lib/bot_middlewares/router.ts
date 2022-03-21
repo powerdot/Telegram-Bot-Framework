@@ -1,7 +1,7 @@
 import type { DB, TBFContext, Page, CallbackPath } from "../types"
 
 let helpers = require("../helpers");
-import dataPacker from "../dataPacker";
+import dataPacker from "../data_packer";
 
 module.exports = ({ db, pages }: { db: DB, pages: Page[] }) => {
     return async function (_ctx: TBFContext, next) {

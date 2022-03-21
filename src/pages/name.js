@@ -16,17 +16,14 @@ module.exports = ({ db, config, paginator, routeToPage }) => {
                         ]
                     })
                 },
-                textHandler: {
-                    clearChat: true,
-                    handler({ ctx }) {
-                        let name = ctx.message.text;
-                        this.send({
-                            text: `Привет, ${name}!`,
-                            buttons: [
-                                [{ text: "назад", page: "index" }],
-                            ]
-                        })
-                    }
+                textHandler({ ctx }) {
+                    let name = ctx.message.text;
+                    this.update({
+                        text: `Привет, ${name}!`,
+                        buttons: [
+                            [{ text: "назад", page: "index" }],
+                        ]
+                    })
                 }
             }
         }
