@@ -4,7 +4,6 @@ module.exports = ({ db, config, paginator, routeToPage }) => {
     return {
         id: "yesornot",
         name: "да или нет",
-        requirements: [],
         actions: {
             main: {
                 clearChat: true,

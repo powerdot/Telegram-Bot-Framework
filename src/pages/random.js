@@ -4,7 +4,6 @@ module.exports = ({ db, config, paginator, routeToPage }) => {
     return {
         id: "random",
         name: "рандом",
-        requirements: [],
         actions: {
             main({ ctx }) {
                 this.update({

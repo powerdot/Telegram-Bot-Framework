@@ -4,7 +4,6 @@ let page: PageExport = ({ db, config, paginator }) => {
     return {
         id: "index",
         name: "Главная страница",
-        requirements: [],
         actions: {
             main: {
                 clearChat: true,
@@ -35,12 +34,33 @@ let page: PageExport = ({ db, config, paginator }) => {
                                 { text: "arr", action: "datatest", data: [{ name: 'sdsdfffsd', id: '333434' }] },
                                 { text: "bool", action: "datatest", data: true }
                             ],
+                            [
+                                { text: "дай цифры", action: "numbers" },
+                            ]
                         ]
                     })
                 },
                 textHandler() {
                     this.send({
                         text: "Привет - Привет!!",
+                    })
+                }
+            },
+            numbers: {
+                async handler() {
+                    this.update({
+                        text: "Отправь мне цифорки)"
+                    })
+                },
+                async textHandler({ text }) {
+                    let is_number = /^\d+$/.test(text)
+                    this.update({
+                        text: `Ты отправил ${text} - это ${is_number ? 'то шо нужно:))' : 'НЕ цифра('}\nМожешь отправить еще раз или...`,
+                        buttons: [
+                            [
+                                { text: "... выйти", action: "main" }
+                            ]
+                        ]
                     })
                 }
             },

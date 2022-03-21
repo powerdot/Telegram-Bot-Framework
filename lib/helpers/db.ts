@@ -1,4 +1,4 @@
-import type { TBFContext } from "../types"
+import type { TBFContext, TelegramMessage, DB } from "../types"
 
 module.exports = (
   bot,
@@ -6,10 +6,10 @@ module.exports = (
     collection_UserData,
     collection_BotMessageHistory,
     collection_UserMessageHistory,
-    collection_WebSerciveSecureTokens,
     collection_Data,
-    collection_Users
-  }) => {
+    collection_Users,
+    collection_specialCommandsHistory
+  }): DB => {
   const config = require('../../config.js');
   let helpers = require("./index");
   let moment = require("moment");
@@ -72,12 +72,14 @@ module.exports = (
   async function addToRemoveMessages(ctx: TBFContext, message_or_arrayMessages, trash) {
     if (trash === undefined) trash = false;
     let chatId = ctx.chatId;
-    let messages = [];
+    let messages: TelegramMessage[] = [];
     if (!Array.isArray(message_or_arrayMessages)) message_or_arrayMessages = [message_or_arrayMessages];
     messages = message_or_arrayMessages;
+    console.log("[addToRemoveMessages]", messages);
     for (let message of messages) {
-      if (trash) console.log("к обязательному удалению:", message.message_id, trash)
-      await collection_BotMessageHistory.insertOne({ chatId, message, messageId: message.message_id, trash }).catch(function (e) {
+      if (trash) console.log("к обязательному удалению:", message, message.message_id, trash);
+      let selectedCollection = message.from.is_bot ? collection_BotMessageHistory : collection_UserMessageHistory;
+      await selectedCollection.insertOne({ chatId, message, messageId: message.message_id, trash }).catch(function (e) {
         console.error('addToRemoveMessages error', e)
       });
     }
@@ -116,11 +118,6 @@ module.exports = (
     }
     return msg;
   }
-
-  async function _webService_getDataFromToken(token_id) {
-    return await collection_WebSerciveSecureTokens.findOne({ token_id })
-  }
-
 
 
   /**
@@ -175,9 +172,39 @@ module.exports = (
 
   async function _UserDataDestroy(ctx: TBFContext) {
     await collection_UserData.deleteMany({ chatId: ctx.chatId });
-    await setValue(ctx, "next_step", false);
     await setValue(ctx, "step", false);
   }
+
+  async function _addUserSpecialCommand(ctx: TBFContext) {
+    let chatId = ctx.chatId;
+    let message = ctx.update.message
+    console.log("_addUserSpecialCommand", chatId, message);
+    await collection_specialCommandsHistory.insertOne({ chatId, message, messageId: message.message_id });
+  }
+
+  async function _getUserSpecialCommands(ctx: TBFContext) {
+    let chatId = ctx.chatId;
+    let messages = await collection_specialCommandsHistory.find({ chatId }).toArray();
+    if (!messages) messages = [];
+    console.log("_getUserSpecialCommands", messages);
+    return messages;
+  }
+
+  async function _removeSpecialCommandsExceptLastOne(ctx: TBFContext) {
+    let chatId = ctx.chatId;
+    let messages = await _getUserSpecialCommands(ctx);
+    let lastMessage = messages[messages.length - 1];
+    console.log("_removeSpecialCommandsExceptLastOne:", messages, lastMessage);
+    for (let message of messages) {
+      if (message.messageId != lastMessage.messageId) {
+        await collection_specialCommandsHistory.deleteOne({ chatId, messageId: message.messageId });
+        try {
+          await ctx.telegram.deleteMessage(chatId, message.messageId);
+        } catch (error) { }
+      }
+    }
+  }
+
 
   /**
    * Находит все сообщения пользователя и бота, которые меньше определенного времени в unix timestamp
@@ -197,7 +224,10 @@ module.exports = (
       },
       user: {
         addUserMessage,
-        getUserMessages
+        getUserMessages,
+        addUserSpecialCommand: _addUserSpecialCommand,
+        getUserSpecialCommands: _getUserSpecialCommands,
+        removeSpecialCommandsExceptLastOne: _removeSpecialCommandsExceptLastOne,
       },
       addToRemoveMessages,
       removeMessages,

@@ -93,7 +93,7 @@ module.exports = (
             id: pageObject.id,
             ctx: null,
             async send({ text = "", buttons = [], keyboard = [] }) {
-                if (!text) throw new Error("send() text is empty");
+                if (text === undefined) throw new Error("send() text is empty");
                 let options = {
                     reply_markup: {
                         inline_keyboard: [],
@@ -117,7 +117,9 @@ module.exports = (
                 return message;
             },
             async update({ text = "", buttons = [], keyboard = [] }) {
+                let _this: PageActionHandlerThis = this;
                 if (text === undefined) throw new Error("update() text is empty");
+
                 let options = {
                     reply_markup: {
                         inline_keyboard: [],
@@ -125,7 +127,7 @@ module.exports = (
                     }
                 };
                 if (buttons.length > 0) {
-                    let inline_buttons = parseButtons(this.id, buttons);
+                    let inline_buttons = parseButtons(_this.id, buttons);
                     options.reply_markup.inline_keyboard = inline_buttons;
                 } else {
                     options.reply_markup.inline_keyboard = [];
@@ -136,29 +138,50 @@ module.exports = (
                 } else {
                     options.reply_markup.keyboard = [];
                 }
+
+                if (_this.ctx.routing.isMessageFromUser) {
+                    // get last bot's message and update it
+                    let lastBotMessage = await db.messages.bot.getLastMessage(_this.ctx);
+                    if (lastBotMessage) {
+                        console.log("message to update:", lastBotMessage);
+                        let edited = await _this.ctx.telegram.editMessageText(
+                            _this.ctx.chatId,
+                            lastBotMessage.messageId,
+                            undefined,
+                            text,
+                            options
+                        );
+                        await db.messages.removeMessages(_this.ctx, true);
+                        return edited;
+                    }
+                }
+
                 return await this.ctx.editMessageText(text, options);
             },
             async goToPage(page, action = "main") {
+                let _this: PageActionHandlerThis = this;
                 let found_page = pages.find(x => x.id == page);
                 if (found_page) {
                     let action_fn = extractHandler(found_page.actions[action]);
-                    action_fn.bind({ ...this, ...{ id: page } })({ ctx: this.ctx });
+                    action_fn.bind({ ..._this, ...{ id: page } })({ ctx: _this.ctx });
                 } else {
                     throw new Error("goToPage() page not found: " + page);
                 }
             },
             async goToAction(action) {
-                let current_page = pages.find(x => x.id == this.id);
+                let _this: PageActionHandlerThis = this;
+                let current_page = pages.find(x => x.id == _this.id);
                 let page_action = current_page.actions[action];
                 if (page_action) {
                     let action_fn = extractHandler(page_action);
-                    action_fn.bind({ ...this, ...{ id: this.id } })({ ctx: this.ctx });
+                    action_fn.bind({ ..._this, ...{ id: _this.id } })({ ctx: _this.ctx });
                 } else {
                     throw new Error("goToAction() action not found: " + action);
                 }
             },
             async clearChat() {
-                await db.messages.removeMessages(this.ctx);
+                let _this: PageActionHandlerThis = this;
+                await db.messages.removeMessages(_this.ctx);
             },
             user: function ({ user_id = false } = { user_id: false }) {
                 let _this: PageActionHandlerThis = this;
@@ -182,21 +205,17 @@ module.exports = (
         if (!pageObject.onCallbackQuery) {
             pageObject.onCallbackQuery = async (ctx: TBFContext) => {
                 pageObject.ctx = ctx;
-                let callbackData = ctx.CallbackPath ? ctx.CallbackPath.current : false;
-                if (!callbackData) return;
-                if (callbackData.route != pageObject.id) return false;
-                let perms = await paginator.check_requirements(ctx, pageObject.requirements, pageObject.id);
-                if (!perms) return;
                 try {
-                    if (!callbackData.action) callbackData.action = "main";
-                    let action = pageObject.actions[callbackData.action];
+                    let ctx_action = ctx.routing.action;
+                    if (!ctx_action) ctx_action = "main";
+                    let action = pageObject.actions[ctx_action];
                     if (action) {
                         if (action.clearChat) await db.messages.removeMessages(ctx);
                         let action_fn = extractHandler(action);
                         await action_fn.bind({ ...binding, ctx })({ ctx, data: ctx.routing.data });
-                        await db.setValue(ctx, "step", pageObject.id + "�" + callbackData.action);
+                        await db.setValue(ctx, "step", pageObject.id + "�" + ctx_action);
                     } else {
-                        throw ("action not found: " + callbackData.action);
+                        throw ("action not found: " + ctx_action);
                     }
                 } catch (error) {
                     console.error(`onCallbackQuery ERROR ON PAGE "${pageObject.id}":`, error);
@@ -205,10 +224,9 @@ module.exports = (
         }
         if (!pageObject.onMessage) {
             pageObject.onMessage = async (ctx: TBFContext) => {
-                if (ctx.updateSubTypes.length != 1 || ctx.updateSubTypes[0] != 'text') return;
+                if (!ctx.routing.message) return;
                 let page = ctx.routing.page;
                 let action = ctx.routing.action;
-                console.log("onMessage", page, action);
                 try {
                     let text_handler = pageObject.actions[action].textHandler;
                     await db.messages.addToRemoveMessages(ctx, ctx.update.message, true);
@@ -241,7 +259,6 @@ module.exports = (
         pages.push(pageObject);
     }
     console.log("✅", `Loader: ${pages.length} ${pages.length == 1 ? 'page' : 'pages'} loaded!`);
-
 
     return { pages, paginator }
 }

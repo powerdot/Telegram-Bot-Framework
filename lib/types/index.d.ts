@@ -2,6 +2,8 @@ import { Telegraf, Markup, Context as TelegrafContext } from 'telegraf';
 import { Application as ExpressApp } from "express"
 import * as tt from 'telegraf/typings/telegram-types';
 
+type TelegramMessage = tt.Message;
+
 type CallbackPathRoute = {
     route: string;
     action: string;
@@ -15,7 +17,6 @@ type CallbackPath = {
 }
 
 interface TBFContext extends TelegrafContext {
-    CallbackPath?: CallbackPath | false
     chatId?: number | null
     routeTo?: string
     routing: {
@@ -25,7 +26,9 @@ interface TBFContext extends TelegrafContext {
         data?: string
         step?: string
         next_step?: string
-        message?: tt.Message
+        message?: TelegramMessage
+        messageTypes: Array<string>
+        isMessageFromUser: boolean
     }
 }
 
@@ -95,7 +98,6 @@ type PageAction = PageActionHandler | {
 interface Page {
     id: string;
     name: string;
-    requirements: Array<string>; // todo
     actions: {
         "main": PageAction;
         [key: string]: PageAction;
@@ -127,7 +129,8 @@ interface MongoDataBase {
     collection_BotMessageHistory: MongoCollection,
     collection_UserMessageHistory: MongoCollection,
     collection_Data: MongoCollection,
-    collection_Users: MongoCollection
+    collection_Users: MongoCollection,
+    collection_specialCommandsHistory: MongoCollection,
 }
 
 interface StartupChainInstances {
@@ -145,6 +148,9 @@ interface DB {
         user: {
             addUserMessage: (ctx: TBFContext, message?: any) => Promise<any>;
             getUserMessages: (ctx: TBFContext) => Promise<any>;
+            addUserSpecialCommand: (ctx: TBFContext) => Promise<any>;
+            getUserSpecialCommands: (ctx: TBFContext) => Promise<any>;
+            removeSpecialCommandsExceptLastOne: (ctx: TBFContext) => Promise<any>;
         },
         addToRemoveMessages: (ctx: TBFContext, message_or_arrayMessages: Array<object> | object, trash?: boolean | undefined) => Promise<any>;
         removeMessages: (ctx: TBFContext, onlyTrash?: boolean | undefined) => Promise<any>;
@@ -175,8 +181,6 @@ interface DB {
 
 
 interface PaginatorReturn {
-    check_requirements: (ctx: TBFContext, requirements, page_id: string) => Promise<any>;
-    clear_requirements_data: (ctx: TBFContext) => Promise<any>
     list: () => Array<{ module: any, path: string }>
     route: (page_id: string, to: string) => string
 }
@@ -197,6 +201,13 @@ interface TBF {
     }) => Promise<TBFPromiseReturn>
 }
 
+interface WebServerArgs {
+    bot: Telegraf<TBFContext>;
+    database: MongoDataBase;
+    db: DB;
+    pages: Page[]
+}
+
 export {
     Telegraf,
     Markup,
@@ -215,5 +226,7 @@ export {
     DB,
     PaginatorReturn,
     TBF,
-    TBFPromiseReturn
+    TBFPromiseReturn,
+    WebServerArgs,
+    TelegramMessage
 }

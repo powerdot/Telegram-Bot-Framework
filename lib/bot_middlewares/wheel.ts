@@ -6,8 +6,7 @@ import dataPacker from "../dataPacker";
 module.exports = ({ db, pages }: { db: DB, pages: Page[] }) => {
     return async function (_ctx: TBFContext, next) {
         let ctx = _ctx;
-        // console.log('==============v')
-        let next_ = await db.getValue(ctx, 'next_step');
+        console.log('==============v')
         let step_ = await db.getValue(ctx, 'step');
         let parseCallbackPath: CallbackPath = helpers.parseCallbackPath(ctx);
         let parseStep: any = false;
@@ -23,11 +22,15 @@ module.exports = ({ db, pages }: { db: DB, pages: Page[] }) => {
             action: undefined,
             data: undefined,
             step: step_,
-            next_step: next_,
-            message: undefined
+            message: undefined,
+            messageTypes: ctx.updateSubTypes,
+            isMessageFromUser: false
         };
         ctx.routing = routing;
-        if (ctx.updateType == 'message') routing.message = ctx.update.message;
+        if (ctx.updateType == 'message') {
+            routing.message = ctx.update.message;
+            routing.isMessageFromUser = true;
+        }
         if (parseCallbackPath) {
             routing.page = parseCallbackPath.current.route;
             routing.action = parseCallbackPath.current.action;
@@ -40,10 +43,9 @@ module.exports = ({ db, pages }: { db: DB, pages: Page[] }) => {
         console.log("route", routing);
         console.log("parseCallbackPath", parseCallbackPath.current);
         console.log("parseStep", parseStep);
-        console.log("next_step", next_);
+        console.log("ctx", ctx);
         console.log('==============');
 
-        ctx.CallbackPath = helpers.parseCallbackPath(ctx);
         if (routing.page) {
             let page = pages.find(p => p.id == routing.page);
             if (page) page.call(ctx)

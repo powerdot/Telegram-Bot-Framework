@@ -14,6 +14,7 @@ module.exports = function () {
         let collection_UserMessageHistory: MongoCollection;
         let collection_Data: MongoCollection;
         let collection_Users: MongoCollection;
+        let collection_specialCommandsHistory: MongoCollection;
 
         console.log("ℹ️ ", `Database (${database_name}) url: ${url}`);
 
@@ -24,13 +25,15 @@ module.exports = function () {
             collection_Data = client.db(database_name).collection("other_data");
             collection_Users = client.db(database_name).collection("users");
             collection_UserMessageHistory = client.db(database_name).collection("user_message_history");
+            collection_specialCommandsHistory = client.db(database_name).collection("special_commands_history");
             resolve({
                 client,
                 collection_UserData,
                 collection_BotMessageHistory,
                 collection_UserMessageHistory,
                 collection_Data,
-                collection_Users
+                collection_Users,
+                collection_specialCommandsHistory
             } as MongoDataBase);
             console.log("ℹ️ ", "Database connected");
         } catch (error) {

@@ -4,7 +4,5 @@ module.exports = {
 		path: "./pages",
 		params: {}
 	},
-	autoRemoveMessages: true,
-	"admins": {
-	}
+	autoRemoveMessages: true
 }

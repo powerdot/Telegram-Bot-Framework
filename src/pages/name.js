@@ -4,7 +4,6 @@ module.exports = ({ db, config, paginator, routeToPage }) => {
     return {
         id: "name",
         name: "имя",
-        requirements: [],
         actions: {
             main: {
                 handler({ ctx, data }) {

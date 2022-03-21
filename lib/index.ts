@@ -7,7 +7,8 @@ import type {
     DB,
     Page,
     TBFPromiseReturn,
-    TBFContext
+    TBFContext,
+    WebServerArgs
 } from "./types"
 
 module.exports.create = ({ webServer, telegramToken }) => {
@@ -45,7 +46,7 @@ module.exports.create = ({ webServer, telegramToken }) => {
             bot.use(require("../lib/bot_middlewares/wheel")({ db, pages }));
 
             // Starting web server
-            if (!webServer) app.use(webServer({ bot, db }));
+            if (!webServer) app.use(webServer({ bot, db, config, pages, database } as WebServerArgs));
         });
     });
 }
