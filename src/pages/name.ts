@@ -18,7 +18,7 @@ let page: PageExport = ({ db, config, paginator }) => {
                         ]
                     })
                 },
-                textHandler({ ctx }) {
+                messageHandler({ ctx }) {
                     let name = ctx.message.text;
                     this.update({
                         text: `Привет, ${name}!`,

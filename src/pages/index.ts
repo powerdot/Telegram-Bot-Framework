@@ -10,7 +10,7 @@ let page: PageExport = ({ db, config, paginator }) => {
                 async handler({ data }) {
                     let text = `Привет - Привет!`
                     if (data) {
-                        text += ` data sum: ${data[0] + data[1]}`
+                        text += ` data sum: ${data.reduce((a, b) => a + b, 0)}`
                     }
                     this.send({
                         text,
@@ -36,13 +36,9 @@ let page: PageExport = ({ db, config, paginator }) => {
                             ],
                             [
                                 { text: "дай цифры", action: "numbers" },
+                                { text: "большие данные", action: "testbigdata" },
                             ]
                         ]
-                    })
-                },
-                textHandler() {
-                    this.send({
-                        text: "Привет - Привет!!",
                     })
                 }
             },
@@ -52,16 +48,27 @@ let page: PageExport = ({ db, config, paginator }) => {
                         text: "Отправь мне цифорки)"
                     })
                 },
-                async textHandler({ text }) {
-                    let is_number = /^\d+$/.test(text)
-                    this.update({
-                        text: `Ты отправил ${text} - это ${is_number ? 'то шо нужно:))' : 'НЕ цифра('}\nМожешь отправить еще раз или...`,
-                        buttons: [
-                            [
-                                { text: "... выйти", action: "main" }
+                async messageHandler({ text }) {
+                    if (text === undefined) {
+                        this.update({
+                            text: `ХОЧУ ЦИФОРКИ 😭`,
+                            buttons: [
+                                [
+                                    { text: "... выйти", action: "main" }
+                                ]
                             ]
-                        ]
-                    })
+                        })
+                    } else {
+                        let is_number = /^\d+$/.test(text)
+                        this.update({
+                            text: `Ты отправил ${text} - это ${is_number ? 'то шо нужно:))' : 'НЕ цифра('}\nМожешь отправить еще раз или...`,
+                            buttons: [
+                                [
+                                    { text: "... выйти", action: "main" }
+                                ]
+                            ]
+                        })
+                    }
                 }
             },
             async datatest({ data }) {
@@ -121,6 +128,10 @@ let page: PageExport = ({ db, config, paginator }) => {
                         [{ text: "в меню", action: "menu" }],
                     ]
                 })
+            },
+            testbigdata() {
+                this.clearChat()
+                this.goToAction({ action: "main", data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9] })
             }
         }
     }

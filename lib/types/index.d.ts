@@ -36,6 +36,20 @@ type PageActionArg = {
     ctx: TBFContext;
     data?: PageActionData;
     text?: string;
+    photo?: tt.MessagePhoto;
+    video?: tt.MessageVideo;
+    animation?: tt.MessageAnimation;
+    document?: tt.MessageDocument;
+    voice?: tt.MessageVoice;
+    audio?: tt.MessageAudio;
+    poll?: tt.MessagePoll;
+    sticker?: tt.MessageSticker;
+    location?: tt.MessageLocation;
+    contact?: tt.MessageContact;
+    venue?: tt.MessageVenue;
+    game?: tt.MessageGame;
+    invoice?: tt.MessageInvoice;
+    dice?: tt.MessageDice;
 }
 
 type ButtonsRowButton = {
@@ -47,7 +61,7 @@ type ButtonsRowButton = {
 type ButtonsRow = Array<ButtonsRowButton>
 type MessageButtons = Array<ButtonsRow>
 
-type PageActionData = string | number | object | Array<any> | boolean;
+type PageActionData = any;//string | number | object | Array<any> | boolean;
 
 type KeyboardRowButton = {
     text: string;
@@ -61,8 +75,8 @@ interface PageActionHandlerThisMethods {
     id: string;
     send: (arg: PageActionHandlerThisSendArg) => Promise<any>;
     update: (arg: PageActionHandlerThisSendArg) => Promise<any>;
-    goToAction: (action: string) => Promise<any>;
-    goToPage: (page: string, action?: string) => Promise<any>;
+    goToAction: (arg: { action: string, data?: any }) => Promise<any>;
+    goToPage: (arg: { page: string, action?: string, data?: any }) => Promise<any>;
     clearChat: () => Promise<any>;
     user: (arg?: { user_id }) => {
         get: () => Promise<Object>;
@@ -78,7 +92,7 @@ type PageActionHandlerThis = {
     ctx: TBFContext;
 } & PageActionHandlerThisMethods;
 
-interface PageActionTextHandler {
+interface PageActionMessageHandler {
     (this: PageActionHandlerThis, arg: PageActionArg): any;
     clearChat?: boolean;
 }
@@ -86,15 +100,15 @@ interface PageActionTextHandler {
 interface PageActionHandler {
     (this: PageActionHandlerThis, arg: PageActionArg): any;
     clearChat?: boolean;
-    textHandler?: PageActionTextHandler;
+    messageHandler?: PageActionMessageHandler;
 }
 
 type PageAction = PageActionHandler | {
     clearChat?: boolean;
     handler: PageActionHandler;
-    textHandler?: PageActionTextHandler | {
+    messageHandler?: PageActionMessageHandler | {
         clearChat?: boolean;
-        handler: PageActionTextHandler;
+        handler: PageActionMessageHandler;
     }
 }
 

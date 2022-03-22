@@ -163,23 +163,23 @@ module.exports = (
 
                 return await this.ctx.editMessageText(text, options);
             },
-            async goToPage(page, action = "main") {
+            async goToPage({ page, action = "main", data }) {
                 let _this: PageActionHandlerThis = this;
                 let found_page = pages.find(x => x.id == page);
                 if (found_page) {
                     let action_fn = extractHandler(found_page.actions[action]);
-                    action_fn.bind({ ..._this, ...{ id: page } })({ ctx: _this.ctx });
+                    action_fn.bind({ ..._this, ...{ id: page } })({ ctx: _this.ctx, data });
                 } else {
                     throw new Error("goToPage() page not found: " + page);
                 }
             },
-            async goToAction(action) {
+            async goToAction({ action, data }) {
                 let _this: PageActionHandlerThis = this;
                 let current_page = pages.find(x => x.id == _this.id);
                 let page_action = current_page.actions[action];
                 if (page_action) {
                     let action_fn = extractHandler(page_action);
-                    action_fn.bind({ ..._this, ...{ id: _this.id } })({ ctx: _this.ctx });
+                    action_fn.bind({ ..._this, ...{ id: _this.id } })({ ctx: _this.ctx, data });
                 } else {
                     throw new Error("goToAction() action not found: " + action);
                 }
@@ -230,15 +230,34 @@ module.exports = (
         if (!pageObject.onMessage) {
             pageObject.onMessage = async (ctx: TBFContext) => {
                 if (!ctx.routing.message) return;
-                let page = ctx.routing.page;
+                console.log("onMessage:", ctx.routing.message);
                 let action = ctx.routing.action;
                 try {
-                    let text_handler = pageObject.actions[action].textHandler;
+                    let handler = pageObject.actions[action].messageHandler;
                     await db.messages.addToRemoveMessages(ctx, ctx.update.message, true);
-                    if (text_handler) {
-                        if (text_handler.clearChat) await db.messages.removeMessages(ctx);
-                        let text_handler_fn = extractHandler(text_handler);
-                        await text_handler_fn.bind({ ...binding, ctx })({ ctx, text: ctx.message.text });
+                    console.log("messageHandler:", handler);
+                    if (handler) {
+                        if (handler.clearChat) await db.messages.removeMessages(ctx);
+                        let handler_fn = extractHandler(handler);
+                        await handler_fn.bind({ ...binding, ctx })({
+                            ctx,
+                            text: ctx.message.text,
+                            photo: ctx.message.photo,
+                            video: ctx.message.video,
+                            animation: ctx.message.animation,
+                            document: ctx.message.document,
+                            voice: ctx.message.voice,
+                            audio: ctx.message.audio,
+                            poll: ctx.message.poll,
+                            sticker: ctx.message.sticker,
+                            location: ctx.message.location,
+                            contact: ctx.message.contact,
+                            venue: ctx.message.venue,
+                            game: ctx.message.game,
+                            invoice: ctx.message.invoice,
+                            dice: ctx.message.dice,
+                        });
+                        console.log("MESSAGE", ctx.message);
                     } else {
                         await db.messages.removeMessages(ctx, true);
                     }

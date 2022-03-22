@@ -17,7 +17,7 @@ let page: PageExport = ({ db, config, paginator }) => {
                         ]
                     })
                 },
-                textHandler: {
+                messageHandler: {
                     clearChat: true,
                     async handler({ text }) {
                         if (text == "Да") {
@@ -35,9 +35,9 @@ let page: PageExport = ({ db, config, paginator }) => {
                                 ]
                             })
                         } else if (text == "Назад") {
-                            await this.goToPage("index")
+                            await this.goToPage({ page: "index" })
                         } else if (text == "Отмена") {
-                            await this.goToAction("main")
+                            await this.goToAction({ action: "main" })
                         } else {
                             this.send({
                                 text: "Я не понял(\nскажи, да или нет?",
