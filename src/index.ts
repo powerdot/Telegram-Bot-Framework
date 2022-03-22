@@ -20,10 +20,6 @@ TBF.create({
         dbName: process.env.MONGO_DB
     },
     config: {
-        pages: {
-            path: "./pages",
-        },
-        autoRemoveMessages: true,
         debug: true
     }
 }).then(({ bot, db, openPage }) => {
