@@ -1,4 +1,4 @@
-import { PageExport } from "../../lib/types"
+import { PageExport } from "../../../lib/types"
 
 let page: PageExport = ({ db, config, paginator }) => {
     return {

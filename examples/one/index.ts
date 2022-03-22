@@ -2,9 +2,9 @@ require('dotenv').config()
 
 import type {
     TBF as TelegramBotFramework,
-} from "../lib/types"
+} from "../../lib/types"
 
-const TBF: TelegramBotFramework = require("../lib");
+const TBF: TelegramBotFramework = require("../../lib");
 
 TBF.create({
     webServer: {
@@ -20,7 +20,10 @@ TBF.create({
         dbName: process.env.MONGO_DB
     },
     config: {
-        debug: true
+        debug: true,
+        pages: {
+            path: './examples/one/pages'
+        }
     }
 }).then(({ bot, db, openPage }) => {
 
