@@ -19,7 +19,7 @@ module.exports = function ({
                 telegram: {
                     apiRoot: apiUrl
                 }
-            });
+            })
             console.log("ℹ️ ", "ApiUrl installed", apiUrl);
         } else {
             bot = new Telegraf(_token);
@@ -29,10 +29,12 @@ module.exports = function ({
         bot.catch((err) => {
             console.error("🚫 ", "Telegram bot error:", err);
         });
+
         bot.launch().then(() => {
             console.log("ℹ️ ", "Telegram bot launched");
             bot.startPolling()
             resolve(bot);
+            return;
         })
     })
 }

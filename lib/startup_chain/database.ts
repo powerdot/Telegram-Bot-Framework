@@ -11,17 +11,17 @@ module.exports = function ({
         let _url = url;
         let _database_name = dbName;
 
-        let client: MongoClient = new MongoClient(_url);
-        let collection_UserData: MongoCollection;
-        let collection_BotMessageHistory: MongoCollection;
-        let collection_UserMessageHistory: MongoCollection;
-        let collection_Data: MongoCollection;
-        let collection_Users: MongoCollection;
-        let collection_specialCommandsHistory: MongoCollection;
-
-        console.log("ℹ️ ", `Database (${_database_name}) url: ${_url}`);
-
         try {
+            let client: MongoClient = new MongoClient(_url);
+            let collection_UserData: MongoCollection;
+            let collection_BotMessageHistory: MongoCollection;
+            let collection_UserMessageHistory: MongoCollection;
+            let collection_Data: MongoCollection;
+            let collection_Users: MongoCollection;
+            let collection_specialCommandsHistory: MongoCollection;
+
+            console.log("ℹ️ ", `Database (${_database_name}) url: ${_url}`);
+
             await client.connect();
             collection_UserData = client.db(_database_name).collection("user_data");
             collection_BotMessageHistory = client.db(_database_name).collection("bot_message_history");
