@@ -1,8 +1,8 @@
 import type {
-    PageActionData,
+    ComponentActionData,
 } from "./types"
 
-function packData(data: PageActionData) {
+function packData(data: ComponentActionData) {
     let packedData = "";
     let type = typeof data;
     switch (type) {
@@ -47,7 +47,7 @@ function unpackData(raw_data: string) {
                 break;
         }
     }
-    return unpackedData as PageActionData;
+    return unpackedData as ComponentActionData;
 }
 
 export default {

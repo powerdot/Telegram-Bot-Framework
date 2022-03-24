@@ -1,23 +1,34 @@
 import type {
     TBFContext,
-    Page,
-    PageActionHandlerThis,
+    Component,
+    ComponentActionHandlerThis,
     MessageButtons,
-    PageActionData,
+    ComponentActionData,
     DB,
-    PageExport,
-    PageActionHandler,
-    TBFConfig
+    ComponentExport,
+    ComponentActionHandler,
+    TBFConfig,
+    PaginatorReturn,
+    PaginatorComponent,
 } from "./types"
 
 import dataPacker from "./data_packer"
 
-module.exports = (
-    { db, config }: { db: DB, config: TBFConfig }
-) => {
-    let paginator = require("./paginator")({ config });
+type loaderArgs = {
+    db: DB,
+    config: TBFConfig,
+    inputComponents: PaginatorComponent[],
+    componentType: string
+}
 
-    function routeToAction(id: string, action: string = 'main', data: PageActionData): string {
+type loaderReturn = {
+    components: Component[]
+}
+
+let loadedComponents: Component[] = [];
+
+function loader({ db, config, inputComponents, componentType }: loaderArgs): loaderReturn {
+    function routeToAction(id: string, action: string = 'main', data: ComponentActionData): string {
         let parsedData = dataPacker.packData(data);
         let compiled = `${id}�${action}${parsedData ? ('�' + parsedData) : ''}`;
         let compiled_bytes_length = Buffer.byteLength(compiled, 'utf8');
@@ -63,43 +74,37 @@ module.exports = (
         return inline_buttons;
     }
 
-    function extractHandler(action): PageActionHandler {
+    function extractHandler(action): ComponentActionHandler {
         let action_fn = typeof action == "function" ? action : action.handler;
         return action_fn;
     }
 
-    let _pages: Array<{
-        module: PageExport,
-        path: string,
-    }> = paginator.list();
+    let components: Component[] = [];
 
-    let pages: Array<Page> = [];
-
-    for (let page of _pages) {
-        let pageObject: Page;
+    for (let page of inputComponents) {
+        let pageObject: Component;
         try {
             pageObject = page.module({
                 db,
                 config,
-                paginator,
                 parseButtons
             })
         } catch (error) {
-            console.log('📛', "Page loading error:", page.path, error);
+            console.log('📛', "Component loading error:", page.path, error);
             continue;
         }
         if (!pageObject.id) {
-            console.error('📛', "Page without id:", page.path);
+            console.error('📛', "Component without id:", page.path);
             continue;
         }
-        if (pages.find(x => x.id == pageObject.id)) {
-            console.error('📛', "Page with same id:", pageObject.id, '- skipped', page.path);
+        if (components.find(x => x.id == pageObject.id)) {
+            console.error('📛', "Component with same id:", pageObject.id, '- skipped', page.path);
             continue;
         }
-        let binding: PageActionHandlerThis = {
+        let binding: ComponentActionHandlerThis = {
             id: pageObject.id,
             ctx: null,
-            async send(this: PageActionHandlerThis, { text = "", buttons = [], keyboard = [], images = [] }) {
+            async send(this: ComponentActionHandlerThis, { text = "", buttons = [], keyboard = [], images = [] }) {
                 if (text === undefined) throw new Error("send() text is empty");
                 let options = {
                     reply_markup: {
@@ -132,8 +137,8 @@ module.exports = (
                 db.messages.addToRemoveMessages(this.ctx, [message], false)
                 return message;
             },
-            async update(this: PageActionHandlerThis, { text = "", buttons = [], keyboard = [] }) {
-                let _this: PageActionHandlerThis = this;
+            async update(this: ComponentActionHandlerThis, { text = "", buttons = [], keyboard = [] }) {
+                let _this: ComponentActionHandlerThis = this;
                 if (text === undefined) throw new Error("update() text is empty");
 
                 let options = {
@@ -174,20 +179,27 @@ module.exports = (
 
                 return await this.ctx.editMessageText(text, { ...options, parse_mode: 'HTML' });
             },
-            async goToPage(this: PageActionHandlerThis, { page, action = "main", data }) {
-                let _this: PageActionHandlerThis = this;
-                let found_page = pages.find(x => x.id == page);
-                if (found_page) {
-                    await db.setValue(_this.ctx, "step", page + "�" + action);
-                    let action_fn = extractHandler(found_page.actions[action]);
-                    action_fn.bind({ ..._this, ...{ id: page } })({ ctx: _this.ctx, data });
+            async goToComponent(this: ComponentActionHandlerThis, { component, action = "main", data, type = "" }) {
+                if (!type) return Error("goToComponent() type is empty");
+                let _this: ComponentActionHandlerThis = this;
+                let found_component = loadedComponents.find(x => x.id == component && x.type == type);
+                if (found_component) {
+                    await db.setValue(_this.ctx, "step", component + "�" + action);
+                    let action_fn = extractHandler(found_component.actions[action]);
+                    action_fn.bind({ ..._this, ...{ id: component } })({ ctx: _this.ctx, data });
                 } else {
-                    throw new Error("goToPage() page not found: " + page);
+                    throw new Error("goToComponent() component not found: " + component);
                 }
             },
-            async goToAction(this: PageActionHandlerThis, { action, data }) {
-                let _this: PageActionHandlerThis = this;
-                let current_page = pages.find(x => x.id == _this.id);
+            async goToPage(this: ComponentActionHandlerThis, { page, action = "main", data }) {
+                this.goToComponent({ component: page, action, data, type: "page" });
+            },
+            async goToPlugin(this: ComponentActionHandlerThis, { plugin, action = "main", data }) {
+                this.goToComponent({ component: plugin, action, data, type: "plugin" });
+            },
+            async goToAction(this: ComponentActionHandlerThis, { action, data }) {
+                let _this: ComponentActionHandlerThis = this;
+                let current_page = components.find(x => x.id == _this.id);
                 let page_action = current_page.actions[action];
                 if (page_action) {
                     await db.setValue(_this.ctx, "step", _this.id + "�" + action);
@@ -197,12 +209,12 @@ module.exports = (
                     throw new Error("goToAction() action not found: " + action);
                 }
             },
-            async clearChat(this: PageActionHandlerThis) {
-                let _this: PageActionHandlerThis = this;
+            async clearChat(this: ComponentActionHandlerThis) {
+                let _this: ComponentActionHandlerThis = this;
                 await db.messages.removeMessages(_this.ctx);
             },
-            user: function (this: PageActionHandlerThis, { user_id = false } = { user_id: false }) {
-                let _this: PageActionHandlerThis = this;
+            user: function (this: ComponentActionHandlerThis, { user_id = false } = { user_id: false }) {
+                let _this: ComponentActionHandlerThis = this;
                 return {
                     async get() {
                         let chat_id = user_id || _this.ctx.chatId;
@@ -293,9 +305,26 @@ module.exports = (
             await action_fn.bind({ ...binding, ctx })({ ctx });
             await db.setValue(ctx, "step", pageObject.id + "�main");
         }
-        pages.push(pageObject);
+        components.push({ ...pageObject, type: componentType });
     }
+
+    return { components }
+}
+
+module.exports = (
+    { db, config }: { db: DB, config: TBFConfig }
+) => {
+    let paginator: PaginatorReturn = require("./paginator")({ config });
+
+    let pages_components = paginator.list("pages")
+    let pages = loader({ db, config, inputComponents: pages_components, componentType: 'page' }).components;
+    loadedComponents.push(...pages);
     console.log("✅", `Loader: ${pages.length} ${pages.length == 1 ? 'page' : 'pages'} loaded!`);
 
-    return { pages, paginator }
+    let plugins_components = paginator.list("plugins")
+    let plugins = loader({ db, config, inputComponents: plugins_components, componentType: 'plugin' }).components;
+    loadedComponents.push(...plugins);
+    console.log("✅", `Loader: ${plugins.length} ${plugins.length == 1 ? 'plugin' : 'plugins'} loaded!`);
+
+    return { pages, plugins, paginator };
 }

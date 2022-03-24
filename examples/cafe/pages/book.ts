@@ -1,8 +1,8 @@
-import { PageExport } from "../../../lib/types"
+import { ComponentExport } from "../../../lib/types"
 import backButton from "../components/backButton";
 let moment = require("moment");
 
-let page: PageExport = ({ db }) => {
+let page: ComponentExport = ({ db }) => {
     return {
         id: "book",
         actions: {

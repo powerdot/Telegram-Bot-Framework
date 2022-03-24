@@ -1,8 +1,8 @@
-import { PageExport, ButtonsRowButton } from "../../../lib/types"
+import { ComponentExport, ButtonsRowButton } from "../../../lib/types"
 import photos from "../components/photos";
 let backToCategoriesButton: ButtonsRowButton = { text: "◀️ Back to Categories", page: "gallery", data: 'clearall' };
 
-let page: PageExport = ({ db, parseButtons }) => {
+let page: ComponentExport = ({ db, parseButtons }) => {
 
     function buildGalleryButtons(place) {
         return [

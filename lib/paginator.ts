@@ -1,15 +1,19 @@
 let fs = require("fs");
 let path = require("path");
+import type {
+    PaginatorReturn
+} from "./types"
 
-module.exports = function ({ config }) {
+module.exports = function ({ config }): PaginatorReturn {
     return {
-        list: function () {
-            let pages_path = config.pages.path[config.pages.path.length - 1] == '/' ? config.pages.path : (config.pages.path + "/");
-            let normalizedPath = path.join(__dirname, '../', pages_path);
+        list: function (componentType = "pages") {
+            let components_path = config[componentType].path[config[componentType].path.length - 1] == '/' ? config[componentType].path : (config[componentType].path + "/");
+            let normalizedPath = path.join(__dirname, '../', components_path);
             let csstts = [];
+            if (!fs.existsSync(normalizedPath)) return [];
             fs.readdirSync(normalizedPath).forEach(function (file) {
-                let page_path = normalizedPath + file;
-                csstts.push({ module: require(page_path), path: page_path });
+                let component_path = normalizedPath + file;
+                csstts.push({ module: require(component_path), path: component_path });
             });
             return csstts;
         }

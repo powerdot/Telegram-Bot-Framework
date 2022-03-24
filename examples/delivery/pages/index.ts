@@ -1,6 +1,6 @@
-import { PageExport } from "../../../lib/types"
+import { ComponentExport } from "../../../lib/types"
 
-let page: PageExport = ({ db, config, paginator }) => {
+let page: ComponentExport = ({ db, config, paginator }) => {
     return {
         id: "index",
         name: "Главная страница",

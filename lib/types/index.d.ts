@@ -32,9 +32,9 @@ interface TBFContext extends TelegrafContext {
     }
 }
 
-type PageActionArg = {
+type ComponentActionArg = {
     ctx: TBFContext;
-    data?: PageActionData;
+    data?: ComponentActionData;
     text?: string;
     photo?: tt.MessagePhoto;
     video?: tt.Video;
@@ -56,13 +56,13 @@ type ButtonsRowButton = {
     text: string;
     action?: string | Function;
     page?: string;
-    data?: PageActionData;
+    data?: ComponentActionData;
     url?: string;
 }
 type ButtonsRow = Array<ButtonsRowButton>
 type MessageButtons = Array<ButtonsRow>
 
-type PageActionData = string | number | { [key: string]: any; } | Array<any> | boolean;
+type ComponentActionData = string | number | { [key: string]: any; } | Array<any> | boolean;
 
 type KeyboardRowButton = {
     text: string;
@@ -72,14 +72,14 @@ type KeyboardRowButton = {
 type KeyboardRow = Array<KeyboardRowButton>
 type Keyboard = Array<KeyboardRow>
 
-type PageActionHandlerThisSendArg = {
+type ComponentActionHandlerThisSendArg = {
     text?: string,
     images?: Array<string>,
     buttons?: MessageButtons,
     keyboard?: Keyboard
 }
 
-type PageActionHandlerThisUpdateArg = {
+type ComponentActionHandlerThisUpdateArg = {
     text?: string,
     buttons?: MessageButtons,
     keyboard?: Keyboard
@@ -87,12 +87,14 @@ type PageActionHandlerThisUpdateArg = {
 
 type goToData = any;
 
-interface PageActionHandlerThisMethods {
+interface ComponentActionHandlerThisMethods {
     id: string;
-    send: (arg: PageActionHandlerThisSendArg) => Promise<any>;
-    update: (arg: PageActionHandlerThisUpdateArg) => Promise<any>;
+    send: (arg: ComponentActionHandlerThisSendArg) => Promise<any>;
+    update: (arg: ComponentActionHandlerThisUpdateArg) => Promise<any>;
     goToAction: (arg: { action: string, data?: goToData }) => Promise<any>;
     goToPage: (arg: { page: string, action?: string, data?: goToData }) => Promise<any>;
+    goToComponent: (arg: { component: string, action?: string, data?: goToData, type: string }) => Promise<any>;
+    goToPlugin: (arg: { plugin: string, action?: string, data?: goToData }) => Promise<any>;
     clearChat: () => Promise<any>;
     user: (arg?: { user_id }) => {
         get: () => Promise<Object>;
@@ -104,36 +106,37 @@ interface PageActionHandlerThisMethods {
     }
 }
 
-type PageActionHandlerThis = {
+type ComponentActionHandlerThis = {
     ctx: TBFContext;
-} & PageActionHandlerThisMethods;
+} & ComponentActionHandlerThisMethods;
 
-interface PageActionMessageHandler {
-    (this: PageActionHandlerThis, arg: PageActionArg): any;
+interface ComponentActionMessageHandler {
+    (this: ComponentActionHandlerThis, arg: ComponentActionArg): any;
     clearChat?: boolean;
 }
 
-interface PageActionHandler {
-    (this: PageActionHandlerThis, arg: PageActionArg): any;
+interface ComponentActionHandler {
+    (this: ComponentActionHandlerThis, arg: ComponentActionArg): any;
     clearChat?: boolean;
-    messageHandler?: PageActionMessageHandler;
+    messageHandler?: ComponentActionMessageHandler;
 }
 
-type PageAction = PageActionHandler | {
+type ComponentAction = ComponentActionHandler | {
     clearChat?: boolean;
-    handler: PageActionHandler;
-    messageHandler?: PageActionMessageHandler | {
+    handler: ComponentActionHandler;
+    messageHandler?: ComponentActionMessageHandler | {
         clearChat?: boolean;
-        handler: PageActionMessageHandler;
+        handler: ComponentActionMessageHandler;
     }
 }
 
-interface Page {
+interface Component {
     id: string;
+    type?: string;
     name?: string;
     actions: {
-        "main": PageAction;
-        [key: string]: PageAction;
+        "main": ComponentAction;
+        [key: string]: ComponentAction;
     },
     onCallbackQuery?: (ctx: TBFContext) => Promise<any>
     onMessage?: (ctx: TBFContext) => Promise<any>
@@ -144,15 +147,15 @@ interface Page {
 }
 
 
-type PageExportArg = {
+type ComponentExportArg = {
     db?: DB;
     config?: any;
     paginator?: any;
     parseButtons?: any;
 }
 
-interface PageExport {
-    (arg: PageExportArg): Page;
+interface ComponentExport {
+    (arg: ComponentExportArg): Component;
 }
 
 
@@ -234,9 +237,12 @@ interface DB {
 }
 
 
+interface PaginatorComponent {
+    module: ComponentExport,
+    path: string,
+}
 interface PaginatorReturn {
-    list: () => Array<{ module: any, path: string }>
-    route: (page_id: string, to: string) => string
+    list: (componentType: string) => PaginatorComponent[]
 }
 
 interface TBFPromiseReturn {
@@ -244,7 +250,7 @@ interface TBFPromiseReturn {
     app: ExpressApp;
     database: MongoDataBase;
     db: DB;
-    pages: Page[],
+    pages: Component[],
     openPage: (arg: { ctx: TBFContext, pageId: string }) => Promise<Error | boolean>;
 }
 
@@ -281,7 +287,7 @@ interface WebServerArgs {
     bot: Telegraf<TBFContext>;
     database: MongoDataBase;
     db: DB;
-    pages: Page[]
+    pages: Component[]
 }
 
 
@@ -292,13 +298,13 @@ export {
     TBFContext,
     CallbackPath,
     CallbackPathRoute,
-    Page,
-    PageExport,
+    Component,
+    ComponentExport,
     MongoDataBase,
-    PageActionHandlerThis,
-    PageActionHandler,
+    ComponentActionHandlerThis,
+    ComponentActionHandler,
     MessageButtons,
-    PageActionData,
+    ComponentActionData,
     StartupChainInstances,
     DB,
     PaginatorReturn,
@@ -310,5 +316,6 @@ export {
     TBFConfig,
     ButtonsRowButton,
     tt,
-    DatabaseMessage
+    DatabaseMessage,
+    PaginatorComponent,
 }

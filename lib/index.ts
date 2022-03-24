@@ -3,7 +3,7 @@ require('module-alias/register');
 import type {
     StartupChainInstances,
     DB,
-    Page,
+    Component,
     TBFPromiseReturn,
     TBFArgs,
     WebServerArgs,
@@ -15,6 +15,9 @@ module.exports.create = ({ webServer, telegram, mongo, config }: TBFArgs) => {
         pages: {
             path: "./pages",
         },
+        plugins: {
+            path: "./plugins",
+        },
         autoRemoveMessages: true,
         debug: false
     }
@@ -24,7 +27,7 @@ module.exports.create = ({ webServer, telegram, mongo, config }: TBFArgs) => {
     return new Promise(async (resolve, reject) => {
         require("../lib/startup_chain")({ webServer, telegram, mongo } as TBFArgs).then(async ({ bot, app, database }: StartupChainInstances) => {
             let db: DB = require("../lib/helpers/db")(bot, database);
-            let { pages }: { pages: Array<Page> } = require("../lib/page_loader")({ db, config: _config });
+            let { pages, plugins }: { pages: Component[], plugins: Component[] } = require("../lib/page_loader")({ db, config: _config });
 
             bot.use(require("../lib/bot_middlewares/set_ids")());
 
@@ -41,7 +44,7 @@ module.exports.create = ({ webServer, telegram, mongo, config }: TBFArgs) => {
                 openPage: ({ ctx, pageId }) => {
                     return new Promise(async (resolve, reject) => {
                         let found_page = pages.find(page => page.id === pageId);
-                        if (!found_page) return reject(new Error("Page not found: " + pageId));
+                        if (!found_page) return reject(new Error("Component not found: " + pageId));
                         found_page.open(ctx);
                         return resolve(true);
                     });

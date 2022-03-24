@@ -1,9 +1,9 @@
-import { PageExport } from "../../../lib/types"
+import { ComponentExport } from "../../../lib/types"
 import backButton from '../components/backButton';
 import calcCrow from '../components/calcCrow';
 let { establishments, ourEstablishmentsText } = require('../components/establishments');
 
-let page: PageExport = ({ db }) => {
+let page: ComponentExport = ({ db }) => {
     return {
         id: "contacts",
         actions: {

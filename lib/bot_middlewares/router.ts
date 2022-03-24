@@ -1,9 +1,9 @@
-import type { DB, TBFContext, Page, CallbackPath } from "../types"
+import type { DB, TBFContext, Component, CallbackPath } from "../types"
 
 let helpers = require("../helpers");
 import dataPacker from "../data_packer";
 
-module.exports = ({ db, pages }: { db: DB, pages: Page[] }) => {
+module.exports = ({ db, pages }: { db: DB, pages: Component[] }) => {
     return async function (_ctx: TBFContext, next) {
         let ctx = _ctx;
         console.log('==============v')

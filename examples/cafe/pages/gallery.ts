@@ -1,7 +1,7 @@
-import { PageExport } from "../../../lib/types"
+import { ComponentExport } from "../../../lib/types"
 import backButton from "../components/backButton";
 
-let page: PageExport = () => {
+let page: ComponentExport = () => {
     return {
         id: "gallery",
         actions: {
