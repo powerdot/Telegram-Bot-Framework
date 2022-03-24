@@ -37,19 +37,19 @@ type PageActionArg = {
     data?: PageActionData;
     text?: string;
     photo?: tt.MessagePhoto;
-    video?: tt.MessageVideo;
-    animation?: tt.MessageAnimation;
-    document?: tt.MessageDocument;
-    voice?: tt.MessageVoice;
-    audio?: tt.MessageAudio;
-    poll?: tt.MessagePoll;
-    sticker?: tt.MessageSticker;
-    location?: tt.MessageLocation;
-    contact?: tt.MessageContact;
-    venue?: tt.MessageVenue;
-    game?: tt.MessageGame;
-    invoice?: tt.MessageInvoice;
-    dice?: tt.MessageDice;
+    video?: tt.Video;
+    animation?: tt.Animation;
+    document?: tt.Document;
+    voice?: tt.Voice;
+    audio?: tt.Audio;
+    poll?: tt.Poll;
+    sticker?: tt.Sticker;
+    location?: tt.Location;
+    contact?: tt.Contact;
+    venue?: tt.Venue;
+    game?: tt.Game;
+    invoice?: tt.Invoice;
+    dice?: tt.Dice;
 }
 
 type ButtonsRowButton = {
@@ -57,26 +57,42 @@ type ButtonsRowButton = {
     action?: string | Function;
     page?: string;
     data?: PageActionData;
+    url?: string;
 }
 type ButtonsRow = Array<ButtonsRowButton>
 type MessageButtons = Array<ButtonsRow>
 
-type PageActionData = any;//string | number | object | Array<any> | boolean;
+type PageActionData = string | number | { [key: string]: any; } | Array<any> | boolean;
 
 type KeyboardRowButton = {
     text: string;
+    request_location?: boolean;
+    request_contact?: boolean;
 }
 type KeyboardRow = Array<KeyboardRowButton>
 type Keyboard = Array<KeyboardRow>
 
-type PageActionHandlerThisSendArg = { text: string, buttons?: MessageButtons, keyboard?: Keyboard }
+type PageActionHandlerThisSendArg = {
+    text?: string,
+    images?: Array<string>,
+    buttons?: MessageButtons,
+    keyboard?: Keyboard
+}
+
+type PageActionHandlerThisUpdateArg = {
+    text?: string,
+    buttons?: MessageButtons,
+    keyboard?: Keyboard
+}
+
+type goToData = any;
 
 interface PageActionHandlerThisMethods {
     id: string;
     send: (arg: PageActionHandlerThisSendArg) => Promise<any>;
-    update: (arg: PageActionHandlerThisSendArg) => Promise<any>;
-    goToAction: (arg: { action: string, data?: any }) => Promise<any>;
-    goToPage: (arg: { page: string, action?: string, data?: any }) => Promise<any>;
+    update: (arg: PageActionHandlerThisUpdateArg) => Promise<any>;
+    goToAction: (arg: { action: string, data?: goToData }) => Promise<any>;
+    goToPage: (arg: { page: string, action?: string, data?: goToData }) => Promise<any>;
     clearChat: () => Promise<any>;
     user: (arg?: { user_id }) => {
         get: () => Promise<Object>;
@@ -114,7 +130,7 @@ type PageAction = PageActionHandler | {
 
 interface Page {
     id: string;
-    name: string;
+    name?: string;
     actions: {
         "main": PageAction;
         [key: string]: PageAction;
@@ -132,6 +148,7 @@ type PageExportArg = {
     db?: DB;
     config?: any;
     paginator?: any;
+    parseButtons?: any;
 }
 
 interface PageExport {
@@ -139,7 +156,8 @@ interface PageExport {
 }
 
 
-import { MongoClient, Collection as MongoCollection } from 'mongodb/mongodb';
+import { MongoClient, Collection as MongoCollection, FindCursor, WithId, Document, InsertOneResult, UpdateResult, DeleteResult } from 'mongodb/mongodb';
+import { Message } from 'typegram';
 interface MongoDataBase {
     client: MongoClient,
     collection_UserData: MongoCollection,
@@ -148,6 +166,7 @@ interface MongoDataBase {
     collection_Data: MongoCollection,
     collection_Users: MongoCollection,
     collection_specialCommandsHistory: MongoCollection,
+    collection_UserDataCollection: MongoCollection,
 }
 
 interface StartupChainInstances {
@@ -156,23 +175,32 @@ interface StartupChainInstances {
     app: ExpressApp | undefined;
 }
 
+
+type DatabaseMessage = {
+    messageId: number;
+    chatId: number;
+    message: tt.Message,
+    trash?: boolean | undefined;
+} | undefined
+
 interface DB {
     bot: Telegraf<TBFContext>,
     messages: {
         bot: {
-            getLastMessage: (ctx: TBFContext) => Promise<any>;
+            getLastMessage: (ctx: TBFContext) => Promise<DatabaseMessage>;
+            getMessages: (ctx: TBFContext, count: number) => Promise<DatabaseMessage[]>;
         },
         user: {
-            addUserMessage: (ctx: TBFContext, message?: any) => Promise<any>;
-            getUserMessages: (ctx: TBFContext) => Promise<any>;
-            addUserSpecialCommand: (ctx: TBFContext) => Promise<any>;
-            getUserSpecialCommands: (ctx: TBFContext) => Promise<any>;
-            removeSpecialCommandsExceptLastOne: (ctx: TBFContext) => Promise<any>;
+            addUserMessage: (ctx: TBFContext, message?: any) => Promise<void>;
+            getUserMessages: (ctx: TBFContext) => Promise<DatabaseMessage[]>;
+            addUserSpecialCommand: (ctx: TBFContext) => Promise<void>;
+            getUserSpecialCommands: (ctx: TBFContext) => Promise<DatabaseMessage[]>;
+            removeSpecialCommandsExceptLastOne: (ctx: TBFContext) => Promise<void>;
         },
-        addToRemoveMessages: (ctx: TBFContext, message_or_arrayMessages: Array<object> | object, trash?: boolean | undefined) => Promise<any>;
-        removeMessages: (ctx: TBFContext, onlyTrash?: boolean | undefined) => Promise<any>;
-        markAllMessagesAsTrash: (ctx: TBFContext) => Promise<any>,
-        findOldMessages: (unix_lim: number) => Promise<any>;
+        addToRemoveMessages: (ctx: TBFContext, message_or_arrayMessages: Array<tt.Message> | tt.Message, trash?: boolean | undefined) => Promise<void>;
+        removeMessages: (ctx: TBFContext, onlyTrash?: boolean | undefined) => Promise<void>;
+        markAllMessagesAsTrash: (ctx: TBFContext) => Promise<void>,
+        findOldMessages: (unix_lim: number) => Promise<DatabaseMessage[]>;
     },
 
     setValue: (ctx: TBFContext, key: string, value: any) => Promise<any>,
@@ -193,6 +221,15 @@ interface DB {
             destroy: (ctx: TBFContext) => Promise<any>,
         },
         destroy: (ctx: TBFContext) => Promise<any>,
+        collection: (ctx: TBFContext, collection_name: string) => {
+            find: (query: object) => Promise<WithId<Document>>;
+            findAll: (query: object) => Promise<Array<WithId<Document>>>;
+            insert: (value: object) => Promise<InsertOneResult<Document>>;
+            update: (query: object, value: object) => Promise<UpdateResult>;
+            updateMany: (query: object, value: object) => Promise<Document | UpdateResult>;
+            delete: (query: object) => Promise<DeleteResult>;
+            deleteMany: (query: object) => Promise<DeleteResult>;
+        }
     }
 }
 
@@ -247,6 +284,7 @@ interface WebServerArgs {
     pages: Page[]
 }
 
+
 export {
     Telegraf,
     Markup,
@@ -269,5 +307,8 @@ export {
     WebServerArgs,
     TelegramMessage,
     TBFArgs,
-    TBFConfig
+    TBFConfig,
+    ButtonsRowButton,
+    tt,
+    DatabaseMessage
 }

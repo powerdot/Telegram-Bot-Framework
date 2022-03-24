@@ -19,15 +19,11 @@ module.exports = (
 
     function routeToAction(id: string, action: string = 'main', data: PageActionData): string {
         let parsedData = dataPacker.packData(data);
-
         let compiled = `${id}�${action}${parsedData ? ('�' + parsedData) : ''}`;
-
         let compiled_bytes_length = Buffer.byteLength(compiled, 'utf8');
         if (compiled_bytes_length > 64) {
             throw new Error(`Data is too long. Allowed 64 bytes. Now is ${compiled_bytes_length}.\nTry shortening the title of page or action or cut sending data.\n${compiled}`);
         }
-        // console.log('routeToAction data', compiled, compiled_bytes_length)
-
         return compiled;
     }
 
@@ -37,7 +33,8 @@ module.exports = (
             if (!row) continue;
             let new_row = [];
             for (let button of row) {
-                let callback_data = "";
+                let callback_data;
+                let url;
                 if (button.action && button.page) {
                     callback_data = routeToAction(button.page, button.action.toString(), button.data);
                 } else {
@@ -51,10 +48,14 @@ module.exports = (
                     if (button.page) {
                         callback_data = routeToAction(button.page, 'main', button.data);
                     }
+                    if (button.url) {
+                        url = button.url;
+                    }
                 }
                 new_row.push({
                     text: button.text,
-                    callback_data
+                    callback_data,
+                    url
                 });
             }
             inline_buttons.push(new_row);
@@ -81,6 +82,7 @@ module.exports = (
                 db,
                 config,
                 paginator,
+                parseButtons
             })
         } catch (error) {
             console.log('📛', "Page loading error:", page.path, error);
@@ -97,12 +99,14 @@ module.exports = (
         let binding: PageActionHandlerThis = {
             id: pageObject.id,
             ctx: null,
-            async send({ text = "", buttons = [], keyboard = [] }) {
+            async send(this: PageActionHandlerThis, { text = "", buttons = [], keyboard = [], images = [] }) {
                 if (text === undefined) throw new Error("send() text is empty");
                 let options = {
                     reply_markup: {
                         inline_keyboard: [],
-                        keyboard: []
+                        keyboard: [],
+                        resize_keyboard: true,
+                        one_time_keyboard: true
                     }
                 };
                 if (buttons.length > 0) {
@@ -117,11 +121,18 @@ module.exports = (
                 } else {
                     options.reply_markup.keyboard = [];
                 }
-                let message = await this.ctx.telegram.sendMessage(this.ctx.chatId, text, options);
+
+                if (images.length) {
+                    console.log("images to send:", images);
+                    return await this.ctx.replyWithMediaGroup(
+                        images.map(x => ({ type: 'photo', media: x }))
+                    )
+                }
+                let message = await this.ctx.telegram.sendMessage(this.ctx.chatId, text, { ...options, parse_mode: 'HTML' });
                 db.messages.addToRemoveMessages(this.ctx, [message], false)
                 return message;
             },
-            async update({ text = "", buttons = [], keyboard = [] }) {
+            async update(this: PageActionHandlerThis, { text = "", buttons = [], keyboard = [] }) {
                 let _this: PageActionHandlerThis = this;
                 if (text === undefined) throw new Error("update() text is empty");
 
@@ -154,41 +165,43 @@ module.exports = (
                             lastBotMessage.messageId,
                             undefined,
                             text,
-                            options
+                            { ...options, parse_mode: 'HTML' }
                         );
                         await db.messages.removeMessages(_this.ctx, true);
                         return edited;
                     }
                 }
 
-                return await this.ctx.editMessageText(text, options);
+                return await this.ctx.editMessageText(text, { ...options, parse_mode: 'HTML' });
             },
-            async goToPage({ page, action = "main", data }) {
+            async goToPage(this: PageActionHandlerThis, { page, action = "main", data }) {
                 let _this: PageActionHandlerThis = this;
                 let found_page = pages.find(x => x.id == page);
                 if (found_page) {
+                    await db.setValue(_this.ctx, "step", page + "�" + action);
                     let action_fn = extractHandler(found_page.actions[action]);
                     action_fn.bind({ ..._this, ...{ id: page } })({ ctx: _this.ctx, data });
                 } else {
                     throw new Error("goToPage() page not found: " + page);
                 }
             },
-            async goToAction({ action, data }) {
+            async goToAction(this: PageActionHandlerThis, { action, data }) {
                 let _this: PageActionHandlerThis = this;
                 let current_page = pages.find(x => x.id == _this.id);
                 let page_action = current_page.actions[action];
                 if (page_action) {
+                    await db.setValue(_this.ctx, "step", _this.id + "�" + action);
                     let action_fn = extractHandler(page_action);
                     action_fn.bind({ ..._this, ...{ id: _this.id } })({ ctx: _this.ctx, data });
                 } else {
                     throw new Error("goToAction() action not found: " + action);
                 }
             },
-            async clearChat() {
+            async clearChat(this: PageActionHandlerThis) {
                 let _this: PageActionHandlerThis = this;
                 await db.messages.removeMessages(_this.ctx);
             },
-            user: function ({ user_id = false } = { user_id: false }) {
+            user: function (this: PageActionHandlerThis, { user_id = false } = { user_id: false }) {
                 let _this: PageActionHandlerThis = this;
                 return {
                     async get() {
@@ -217,8 +230,8 @@ module.exports = (
                     if (action) {
                         if (action.clearChat) await db.messages.removeMessages(ctx);
                         let action_fn = extractHandler(action);
-                        await action_fn.bind({ ...binding, ctx })({ ctx, data: ctx.routing.data });
                         await db.setValue(ctx, "step", pageObject.id + "�" + ctx_action);
+                        await action_fn.bind({ ...binding, ctx })({ ctx, data: ctx.routing.data });
                     } else {
                         throw ("action not found: " + ctx_action);
                     }
@@ -234,7 +247,7 @@ module.exports = (
                 let action = ctx.routing.action;
                 try {
                     let handler = pageObject.actions[action].messageHandler;
-                    await db.messages.addToRemoveMessages(ctx, ctx.update.message, true);
+                    await db.messages.addToRemoveMessages(ctx, ctx.message, true);
                     console.log("messageHandler:", handler);
                     if (handler) {
                         if (handler.clearChat) await db.messages.removeMessages(ctx);

@@ -5,7 +5,11 @@
   "main": "lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "example1": "nodemon --inspect=3592 -e ts,tsx --exec node -r ts-node/register ./examples/one/index.ts"
+    "example_cafe": "nodemon --inspect=3592 -e ts,tsx --exec node -r ts-node/register ./examples/cafe/index.ts",
+    "example_delivery": "nodemon --inspect=3592 -e ts,tsx --exec node -r ts-node/register ./examples/delivery/index.ts",
+    "example_game": "nodemon --inspect=3592 -e ts,tsx --exec node -r ts-node/register ./examples/game/index.ts",
+    "example_news": "nodemon --inspect=3592 -e ts,tsx --exec node -r ts-node/register ./examples/news/index.ts",
+    "example_twithub": "nodemon --inspect=3592 -e ts,tsx --exec node -r ts-node/register ./examples/twithub/index.ts"
   },
   "author": "@powerdot",
   "license": "ISC",
@@ -16,6 +20,7 @@
     "dotenv": "^8.6.0",
     "express": "^4.17.3",
     "https-proxy-agent": "^2.2.4",
+    "localized-strings": "^0.2.4",
     "module-alias": "^2.2.2",
     "moment": "^2.29.1",
     "mongodb": "^4.4.1",

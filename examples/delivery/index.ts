@@ -7,11 +7,6 @@ import type {
 const TBF: TelegramBotFramework = require("../../lib");
 
 TBF.create({
-    webServer: {
-        module: require("./webserver"),
-        port: process.env.PORT || 8383,
-        address: process.env.ADDRESS || ""
-    },
     telegram: {
         token: process.env.TOKEN,
     },
@@ -22,7 +17,7 @@ TBF.create({
     config: {
         debug: true,
         pages: {
-            path: './examples/one/pages'
+            path: './examples/delivery/pages'
         }
     }
 }).then(({ bot, db, openPage }) => {
