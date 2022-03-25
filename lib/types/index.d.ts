@@ -348,6 +348,7 @@ export {
     TBFArgs,
     TBFConfig,
     ButtonsRowButton,
+    ButtonsRow,
     tt,
     DatabaseMessage,
     PaginatorComponent,

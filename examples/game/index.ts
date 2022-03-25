@@ -12,7 +12,7 @@ TBF.create({
     },
     mongo: {
         url: process.env.MONGO_URL,
-        dbName: process.env.MONGO_DB
+        dbName: "example_game"
     },
     config: {
         debug: true,
