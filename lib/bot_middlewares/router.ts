@@ -3,7 +3,7 @@ import type { DB, TBFContext, Component, CallbackPath } from "../types"
 let helpers = require("../helpers");
 import dataPacker from "../data_packer";
 
-module.exports = ({ db, pages }: { db: DB, pages: Component[] }) => {
+module.exports = ({ db, components }: { db: DB, components: Component[] }) => {
     return async function (_ctx: TBFContext, next) {
         let ctx = _ctx;
         console.log('==============v')
@@ -18,7 +18,7 @@ module.exports = ({ db, pages }: { db: DB, pages: Component[] }) => {
         }
         let routing = {
             type: ctx.updateType,
-            page: undefined,
+            component: undefined,
             action: undefined,
             data: undefined,
             step: step_,
@@ -32,12 +32,12 @@ module.exports = ({ db, pages }: { db: DB, pages: Component[] }) => {
             routing.isMessageFromUser = true;
         }
         if (parseCallbackPath) {
-            routing.page = parseCallbackPath.current.route;
+            routing.component = parseCallbackPath.current.route;
             routing.action = parseCallbackPath.current.action;
-            routing.data = dataPacker.unpackData(parseCallbackPath.current.data);
+            routing.data = await dataPacker.unpackData(parseCallbackPath.current.data, db, ctx);
         }
         if (parseStep) {
-            if (!routing.page) routing.page = parseStep.route;
+            if (!routing.component) routing.component = parseStep.route;
             if (!routing.action) routing.action = parseStep.action;
         }
         console.log("route", routing);
@@ -46,9 +46,9 @@ module.exports = ({ db, pages }: { db: DB, pages: Component[] }) => {
         console.log("ctx", ctx);
         console.log('==============');
 
-        if (routing.page) {
-            let page = pages.find(p => p.id == routing.page);
-            if (page) page.call(ctx)
+        if (routing.component) {
+            let component = components.find(p => p.id == routing.component);
+            if (component) component.call(ctx)
         }
         return next();
     }

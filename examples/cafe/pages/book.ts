@@ -50,7 +50,12 @@ let page: ComponentExport = ({ db }) => {
                     await user.setValue("phone", null);
                     await this.goToAction({ action: "main" });
                 } else {
-                    await this.goToAction({ action: "date" });
+                    await this.goToPlugin({
+                        plugin: "date_selector",
+                        data: {
+                            callback: { page: "book", action: 'date_set' }
+                        }
+                    });
                 }
             },
             phone: {
@@ -80,57 +85,35 @@ let page: ComponentExport = ({ db }) => {
                     }
                     let user = this.user();
                     user.setValue("phone", text);
-                    this.goToAction({ action: "date" });
+                    this.goToPlugin({
+                        plugin: "date_selector",
+                        data: {
+                            callback: { page: "book", action: 'date_set' }
+                        }
+                    });
                 }
             },
-            date() {
-                let three_days_after_tomorrow = [];
-                for (let i = 2; i < 5; i++) {
-                    three_days_after_tomorrow.push([{
-                        text: moment().add(i, "day").format("DD MMM - ddd"),
-                        action: 'time',
-                        data: moment().add(i, "day").format("YYYY-MM-DD")
-                    }]);
-                }
-                this.update({
-                    text: `What date do you want to book?\n\nToday is ${moment().format("DD.MM.YYYY")}`,
-                    buttons: [
-                        [{ text: "Today", action: 'time', data: moment().format("YYYY-MM-DD") }],
-                        [{ text: "Tomorrow", action: 'time', data: moment().add(1, "day").format("YYYY-MM-DD") }],
-                        ...three_days_after_tomorrow,
-                        backButton
-                    ]
-                });
-            },
-            time({ data }) {
+            async date_set({ data }) {
                 let user = this.user();
-                user.setValue("date", data);
-
-                let available_times = [];
-                for (let i = 12; i < 18; i += 1) {
-                    let row = [];
-                    for (let j = 0; j < 3; j++) {
-                        row.push({
-                            text: `${i}:${j * 2}0`,
-                            action: 'result',
-                            data: `${i}:${j * 2}0`
-                        });
+                await user.setValue("date", data);
+                this.goToPlugin({
+                    plugin: "time_selector",
+                    data: {
+                        callback: { page: "book", action: 'time_set' }
                     }
-                    available_times.push(row)
-                }
-
-                this.update({
-                    text: `What time do you want to book?`,
-                    buttons: [...available_times, backButton]
                 });
             },
-            async result({ data }) {
+            async time_set({ data }) {
                 let user = this.user();
                 await user.setValue("time", data);
+                this.goToAction({ action: 'result' });
+            },
+            async result() {
+                let user = this.user();
                 let name = await user.getValue("name");
                 let phone = await user.getValue("phone");
                 let date = await user.getValue("date");
-                let time = await data;
+                let time = await user.getValue("time");
                 this.update({
                     text: `Alright, ${name}!\n\nYour phone number is ${phone}\nYour date is ${date} at ${time}\n\nIs this correct?`,
                     buttons: [

@@ -2,14 +2,14 @@ import type {
     TBFContext,
     Component,
     ComponentActionHandlerThis,
-    MessageButtons,
     ComponentActionData,
     DB,
-    ComponentExport,
     ComponentActionHandler,
     TBFConfig,
     PaginatorReturn,
     PaginatorComponent,
+    ParseButtons,
+    ParseButtonsReturn,
 } from "./types"
 
 import dataPacker from "./data_packer"
@@ -28,51 +28,66 @@ type loaderReturn = {
 let loadedComponents: Component[] = [];
 
 function loader({ db, config, inputComponents, componentType }: loaderArgs): loaderReturn {
-    function routeToAction(id: string, action: string = 'main', data: ComponentActionData): string {
-        let parsedData = dataPacker.packData(data);
-        let compiled = `${id}�${action}${parsedData ? ('�' + parsedData) : ''}`;
-        let compiled_bytes_length = Buffer.byteLength(compiled, 'utf8');
-        if (compiled_bytes_length > 64) {
-            throw new Error(`Data is too long. Allowed 64 bytes. Now is ${compiled_bytes_length}.\nTry shortening the title of page or action or cut sending data.\n${compiled}`);
-        }
-        return compiled;
+    function routeToAction(ctx: TBFContext, id: string, action: string = 'main', data: ComponentActionData): Promise<string> {
+        return new Promise(async (resolve, reject) => {
+            let parsedData = dataPacker.packData(data);
+            let compiled = `${id}�${action}${parsedData ? ('�' + parsedData) : ''}`;
+            let compiled_bytes_length = Buffer.byteLength(compiled, 'utf8');
+            if (compiled_bytes_length > 64) {
+                // save to db under user
+                let tempdata_identifier = 'X' + (ctx.callbackQuery?.message?.message_id || ctx.message?.message_id) + Math.floor(Math.random() * 9999);
+                await db.setValue(ctx, tempdata_identifier, data);
+                compiled = `${id}�${action}�${tempdata_identifier}`;
+
+                compiled_bytes_length = Buffer.byteLength(compiled, 'utf8');
+                if (compiled_bytes_length > 64) {
+                    return reject(new Error(`Data is too long. Allowed 64 bytes. Now is ${compiled_bytes_length}.\nTry shortening the title of page or action or cut sending data.\n${compiled}`));
+                }
+            }
+            return resolve(compiled);
+        })
     }
 
-    function parseButtons(id: string, buttons: MessageButtons = []) {
-        let inline_buttons = [];
-        for (let row of buttons) {
-            if (!row) continue;
-            let new_row = [];
-            for (let button of row) {
-                let callback_data;
-                let url;
-                if (button.action && button.page) {
-                    callback_data = routeToAction(button.page, button.action.toString(), button.data);
-                } else {
-                    if (button.action) {
-                        if (typeof button.action == "function") {
-                            callback_data = button.action();
-                        } else {
-                            callback_data = routeToAction(id, button.action, button.data);
+    let parseButtons: ParseButtons = function ({ ctx, id, buttons = [] }): ParseButtonsReturn {
+        return new Promise(async (resolve, reject) => {
+            let inline_buttons = [];
+            for (let row of buttons) {
+                if (!row) continue;
+                let new_row = [];
+                for (let button of row) {
+                    let callback_data;
+                    let url;
+                    let component_name = button.page || button.plugin;
+                    if (button.action && component_name) {
+                        callback_data = await routeToAction(ctx, component_name, button.action.toString(), button.data);
+                    } else {
+                        if (button.action) {
+                            if (typeof button.action == "function") {
+                                callback_data = button.action();
+                            } else {
+                                callback_data = await routeToAction(ctx, id, button.action, button.data);
+                            }
+                        }
+                        if (component_name) {
+                            callback_data = await routeToAction(ctx, component_name, 'main', button.data);
+                        }
+                        if (button.url) {
+                            url = button.url;
                         }
                     }
-                    if (button.page) {
-                        callback_data = routeToAction(button.page, 'main', button.data);
-                    }
-                    if (button.url) {
-                        url = button.url;
-                    }
+                    new_row.push({
+                        text: button.text,
+                        callback_data,
+                        url
+                    });
                 }
-                new_row.push({
-                    text: button.text,
-                    callback_data,
-                    url
-                });
+                inline_buttons.push(new_row);
             }
-            inline_buttons.push(new_row);
-        }
-        return inline_buttons;
+            return resolve(inline_buttons);
+        })
     }
+
+
 
     function extractHandler(action): ComponentActionHandler {
         let action_fn = typeof action == "function" ? action : action.handler;
@@ -97,12 +112,13 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
             console.error('📛', "Component without id:", page.path);
             continue;
         }
-        if (components.find(x => x.id == pageObject.id)) {
+        if (loadedComponents.find(x => x.id == pageObject.id)) {
             console.error('📛', "Component with same id:", pageObject.id, '- skipped', page.path);
             continue;
         }
         let binding: ComponentActionHandlerThis = {
             id: pageObject.id,
+            type: pageObject.type,
             ctx: null,
             async send(this: ComponentActionHandlerThis, { text = "", buttons = [], keyboard = [], images = [] }) {
                 if (text === undefined) throw new Error("send() text is empty");
@@ -115,7 +131,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     }
                 };
                 if (buttons.length > 0) {
-                    let inline_buttons = parseButtons(this.id, buttons);
+                    let inline_buttons = await parseButtons({ ctx: this.ctx, id: this.id, buttons });
                     options.reply_markup.inline_keyboard = inline_buttons;
                 } else {
                     options.reply_markup.inline_keyboard = [];
@@ -148,7 +164,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     }
                 };
                 if (buttons.length > 0) {
-                    let inline_buttons = parseButtons(_this.id, buttons);
+                    let inline_buttons = await parseButtons({ ctx: _this.ctx, id: _this.id, buttons });
                     options.reply_markup.inline_keyboard = inline_buttons;
                 } else {
                     options.reply_markup.inline_keyboard = [];
@@ -199,7 +215,8 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
             },
             async goToAction(this: ComponentActionHandlerThis, { action, data }) {
                 let _this: ComponentActionHandlerThis = this;
-                let current_page = components.find(x => x.id == _this.id);
+                let current_page = loadedComponents.find(x => x.id == _this.id);
+                // console.log("current_page:", components, current_page, _this);
                 let page_action = current_page.actions[action];
                 if (page_action) {
                     await db.setValue(_this.ctx, "step", _this.id + "�" + action);

@@ -21,7 +21,7 @@ interface TBFContext extends TelegrafContext {
     routeTo?: string
     routing: {
         type: string
-        page?: string
+        component?: string
         action?: string
         data?: string
         step?: string
@@ -56,6 +56,7 @@ type ButtonsRowButton = {
     text: string;
     action?: string | Function;
     page?: string;
+    plugin?: string;
     data?: ComponentActionData;
     url?: string;
 }
@@ -86,15 +87,23 @@ type ComponentActionHandlerThisUpdateArg = {
 }
 
 type goToData = any;
+type pluginGoToData = {
+    callback: {
+        page: "";
+        action?: "",
+    },
+    [key: string]: any;
+} & goToData
 
 interface ComponentActionHandlerThisMethods {
     id: string;
+    type: string;
     send: (arg: ComponentActionHandlerThisSendArg) => Promise<any>;
     update: (arg: ComponentActionHandlerThisUpdateArg) => Promise<any>;
     goToAction: (arg: { action: string, data?: goToData }) => Promise<any>;
     goToPage: (arg: { page: string, action?: string, data?: goToData }) => Promise<any>;
     goToComponent: (arg: { component: string, action?: string, data?: goToData, type: string }) => Promise<any>;
-    goToPlugin: (arg: { plugin: string, action?: string, data?: goToData }) => Promise<any>;
+    goToPlugin: (arg: { plugin: string, action?: string, data: pluginGoToData }) => Promise<any>;
     clearChat: () => Promise<any>;
     user: (arg?: { user_id }) => {
         get: () => Promise<Object>;
@@ -146,12 +155,19 @@ interface Component {
     open?: (ctx: TBFContext) => Promise<any>,
 }
 
+type ParseButtonsArg = {
+    ctx: TBFContext;
+    id: string;
+    buttons: ButtonsRowButton[][];
+}
+type ParseButtonsReturn = Promise<tt.InlineKeyboardButton[][]>;
+type ParseButtons = (arg: ParseButtonsArg) => ParseButtonsReturn;
 
 type ComponentExportArg = {
     db?: DB;
     config?: any;
     paginator?: any;
-    parseButtons?: any;
+    parseButtons?: ParseButtons;
 }
 
 interface ComponentExport {
@@ -251,11 +267,15 @@ interface TBFPromiseReturn {
     database: MongoDataBase;
     db: DB;
     pages: Component[],
+    plugins: Component[],
     openPage: (arg: { ctx: TBFContext, pageId: string }) => Promise<Error | boolean>;
 }
 
 interface TBFConfig {
     pages?: {
+        path: string;
+    },
+    plugins?: {
         path: string;
     }
     autoRemoveMessages?: boolean;
@@ -287,7 +307,7 @@ interface WebServerArgs {
     bot: Telegraf<TBFContext>;
     database: MongoDataBase;
     db: DB;
-    pages: Component[]
+    components: Component[]
 }
 
 
@@ -318,4 +338,7 @@ export {
     tt,
     DatabaseMessage,
     PaginatorComponent,
+    ParseButtons,
+    ParseButtonsReturn,
+    ComponentAction
 }

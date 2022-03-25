@@ -28,6 +28,7 @@ module.exports.create = ({ webServer, telegram, mongo, config }: TBFArgs) => {
         require("../lib/startup_chain")({ webServer, telegram, mongo } as TBFArgs).then(async ({ bot, app, database }: StartupChainInstances) => {
             let db: DB = require("../lib/helpers/db")(bot, database);
             let { pages, plugins }: { pages: Component[], plugins: Component[] } = require("../lib/page_loader")({ db, config: _config });
+            let components = [...pages, ...plugins];
 
             bot.use(require("../lib/bot_middlewares/set_ids")());
 
@@ -41,9 +42,10 @@ module.exports.create = ({ webServer, telegram, mongo, config }: TBFArgs) => {
                 database,
                 db,
                 pages,
+                plugins,
                 openPage: ({ ctx, pageId }) => {
                     return new Promise(async (resolve, reject) => {
-                        let found_page = pages.find(page => page.id === pageId);
+                        let found_page = components.find(page => page.id === pageId);
                         if (!found_page) return reject(new Error("Component not found: " + pageId));
                         found_page.open(ctx);
                         return resolve(true);
@@ -55,11 +57,11 @@ module.exports.create = ({ webServer, telegram, mongo, config }: TBFArgs) => {
             if (config.autoRemoveMessages) require("../lib/auto_remove_messages")({ db });
 
             // Engine router
-            bot.use(require("../lib/bot_middlewares/router")({ db, pages }));
+            bot.use(require("../lib/bot_middlewares/router")({ db, components }));
 
             // Starting web server
             if (app && webServer?.module)
-                app.use(webServer.module({ bot, db, config, pages, database } as WebServerArgs));
+                app.use(webServer.module({ bot, db, config, components, database } as WebServerArgs));
         });
     });
 }

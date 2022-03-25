@@ -28,6 +28,7 @@ module.exports = (
   }
 
   async function removeValue(ctx: TBFContext, key) {
+    console.log("[REMOVE value]", key);
     return await collection_UserData.deleteOne({ name: key, chatId: ctx.chatId });
   }
 

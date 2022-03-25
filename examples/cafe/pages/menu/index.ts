@@ -1,10 +1,10 @@
-import { ComponentExport, ButtonsRowButton } from "../../../lib/types"
-import backButton from "../components/backButton";
-import menu from "../components/menu";
+import { ComponentExport, ButtonsRowButton } from "../../../../lib/types"
+import backButton from "../../components/backButton";
+import menu from "./menu";
 
 let categoriesButton: ButtonsRowButton[] = [{ text: "◀️ Back to Categories", action: "main" }];
 
-let MiniSearch = require("../components/minisearch.min.js");
+let MiniSearch = require("./minisearch.min.js");
 let miniSearch = new MiniSearch({
     fields: ['name'],
     storeFields: ['name', 'category', 'price'],

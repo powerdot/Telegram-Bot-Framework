@@ -18,6 +18,9 @@ TBF.create({
         debug: true,
         pages: {
             path: './examples/cafe/pages'
+        },
+        plugins: {
+            path: './examples/cafe/plugins'
         }
     }
 }).then(({ bot, db, openPage }) => {
@@ -26,7 +29,7 @@ TBF.create({
         console.log("start", ctx.from.id);
         await db.messages.removeMessages(ctx);
         await db.messages.user.removeSpecialCommandsExceptLastOne(ctx);
-        await db.user.data.destroy(ctx);
+        // await db.user.data.destroy(ctx);
         await openPage({ ctx, pageId: "index" });
     });
 

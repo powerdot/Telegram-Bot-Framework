@@ -1,7 +1,7 @@
-import { ComponentExport } from "../../../lib/types"
-import backButton from '../components/backButton';
-import calcCrow from '../components/calcCrow';
-let { establishments, ourEstablishmentsText } = require('../components/establishments');
+import { ComponentExport } from "../../../../lib/types"
+import backButton from '../../components/backButton';
+import calcCrow from './calcCrow';
+let { establishments, ourEstablishmentsText } = require('./establishments');
 
 let page: ComponentExport = ({ db }) => {
     return {

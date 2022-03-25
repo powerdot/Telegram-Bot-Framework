@@ -1,5 +1,7 @@
 import type {
     ComponentActionData,
+    DB,
+    TBFContext
 } from "./types"
 
 function packData(data: ComponentActionData) {
@@ -24,7 +26,7 @@ function packData(data: ComponentActionData) {
     return packedData as string | undefined;
 }
 
-function unpackData(raw_data: string) {
+async function unpackData(raw_data: string, db: DB, ctx: TBFContext) {
     let unpackedData = null;
     if (raw_data) {
         let data_type = raw_data[0];
@@ -41,6 +43,10 @@ function unpackData(raw_data: string) {
                 break;
             case "O":
                 unpackedData = JSON.parse(cleared);
+                break;
+            case "X":
+                unpackedData = await db.getValue(ctx, raw_data);
+                db.removeValue(ctx, raw_data);
                 break;
             default:
                 unpackedData = cleared;
