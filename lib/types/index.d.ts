@@ -230,7 +230,7 @@ interface DB {
     },
 
     tempData: {
-        add: (messagespase: string, uniqid: string, data: any) => Promise<void>;
+        add: (chatId: number, messagespase: string, uniqid: string, data: any) => Promise<void>;
         get: (messagespase: string, uniqid: string) => Promise<WithId<Document>>;
         remove: (messagespase: string) => Promise<void>;
     },

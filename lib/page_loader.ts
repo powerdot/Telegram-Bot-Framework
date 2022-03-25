@@ -39,7 +39,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                 let uniqid = Math.floor(Math.random() * 99999).toString();
                 let tempdata_identifier = 'X' + messagespace + "." + uniqid;
                 console.log("tempdata_identifier", tempdata_identifier)
-                await db.tempData.add(messagespace, uniqid, data)
+                await db.tempData.add(ctx.chatId, messagespace, uniqid, data)
                 compiled = `${id}�${action}�${tempdata_identifier}`;
 
                 compiled_bytes_length = Buffer.byteLength(compiled, 'utf8');

@@ -33,8 +33,8 @@ module.exports = (
     return await collection_UserData.deleteOne({ name: key, chatId: ctx.chatId });
   }
 
-  async function TempDataAdd(messagespase: string, uniqid: string, data: any) {
-    await collection_TempData.updateOne({ messagespase, uniqid }, { $set: { messagespase, uniqid, data } }, { upsert: true });
+  async function TempDataAdd(chatId: number, messagespase: string, uniqid: string, data: any) {
+    await collection_TempData.updateOne({ messagespase, uniqid, chatId }, { $set: { messagespase, uniqid, data, chatId } }, { upsert: true });
     console.log("[ADD TempData]", messagespase, uniqid, data);
     return;
   }
@@ -236,6 +236,7 @@ module.exports = (
   async function _UserDataDestroy(ctx: TBFContext) {
     await collection_UserData.deleteMany({ chatId: ctx.chatId });
     await collection_UserDataCollection.deleteMany({ chatId: ctx.chatId });
+    await collection_TempData.deleteMany({ chatId: ctx.chatId });
     await setValue(ctx, "step", false);
   }
 
