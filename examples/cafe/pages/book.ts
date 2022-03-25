@@ -53,7 +53,7 @@ let page: ComponentExport = ({ db }) => {
                     await this.goToPlugin({
                         plugin: "date_selector",
                         data: {
-                            callback: { page: "book", action: 'date_set' }
+                            callback: { page: this.id, action: 'date_set' }
                         }
                     });
                 }
@@ -88,7 +88,7 @@ let page: ComponentExport = ({ db }) => {
                     this.goToPlugin({
                         plugin: "date_selector",
                         data: {
-                            callback: { page: "book", action: 'date_set' }
+                            callback: { page: this.id, action: 'date_set' }
                         }
                     });
                 }
@@ -99,7 +99,7 @@ let page: ComponentExport = ({ db }) => {
                 this.goToPlugin({
                     plugin: "time_selector",
                     data: {
-                        callback: { page: "book", action: 'time_set' }
+                        callback: { page: this.id, action: 'time_set' }
                     }
                 });
             },
