@@ -13,6 +13,7 @@ module.exports = (
     collection_Users,
     collection_specialCommandsHistory,
     collection_UserDataCollection,
+    collection_TempData,
   }: MongoDataBase): DB => {
 
   async function getValue(ctx: TBFContext, key) {
@@ -30,6 +31,25 @@ module.exports = (
   async function removeValue(ctx: TBFContext, key) {
     console.log("[REMOVE value]", key);
     return await collection_UserData.deleteOne({ name: key, chatId: ctx.chatId });
+  }
+
+  async function TempDataAdd(messagespase: string, uniqid: string, data: any) {
+    await collection_TempData.updateOne({ messagespase, uniqid }, { $set: { messagespase, uniqid, data } }, { upsert: true });
+    console.log("[ADD TempData]", messagespase, uniqid, data);
+    return;
+  }
+
+  async function TempDataGet(messagespase: string, uniqid: string) {
+    let data = await collection_TempData.findOne({ messagespase, uniqid });
+    data = data ? data.data : undefined;
+    console.log("[GET TempData]", messagespase, uniqid, '->', data);
+    return data;
+  }
+
+  async function TempDataRemove(messagespase: string) {
+    console.log("[REMOVE TempData]", messagespase);
+    await collection_TempData.deleteMany({ messagespase });
+    return;
   }
 
   function parseQuery(query: { _id?: any } = {}) {
@@ -278,6 +298,12 @@ module.exports = (
       removeMessages,
       markAllMessagesAsTrash,
       findOldMessages
+    },
+
+    tempData: {
+      add: TempDataAdd,
+      get: TempDataGet,
+      remove: TempDataRemove
     },
 
     setValue,

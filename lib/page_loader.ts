@@ -35,8 +35,11 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
             let compiled_bytes_length = Buffer.byteLength(compiled, 'utf8');
             if (compiled_bytes_length > 64) {
                 // save to db under user
-                let tempdata_identifier = 'X' + (ctx.callbackQuery?.message?.message_id || ctx.message?.message_id) + Math.floor(Math.random() * 9999);
-                await db.setValue(ctx, tempdata_identifier, data);
+                let messagespace = (ctx.callbackQuery?.message?.message_id || ctx.message?.message_id).toString();
+                let uniqid = Math.floor(Math.random() * 99999).toString();
+                let tempdata_identifier = 'X' + messagespace + "." + uniqid;
+                console.log("tempdata_identifier", tempdata_identifier)
+                await db.tempData.add(messagespace, uniqid, data)
                 compiled = `${id}�${action}�${tempdata_identifier}`;
 
                 compiled_bytes_length = Buffer.byteLength(compiled, 'utf8');

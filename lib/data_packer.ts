@@ -45,8 +45,12 @@ async function unpackData(raw_data: string, db: DB, ctx: TBFContext) {
                 unpackedData = JSON.parse(cleared);
                 break;
             case "X":
-                unpackedData = await db.getValue(ctx, raw_data);
-                db.removeValue(ctx, raw_data);
+                console.log("X:", cleared, raw_data);
+                let route = cleared.split(".");
+                let messagespace = route[0];
+                let uniqid = route[1];
+                unpackedData = await db.tempData.get(messagespace, uniqid);
+                db.tempData.remove(messagespace);
                 break;
             default:
                 unpackedData = cleared;

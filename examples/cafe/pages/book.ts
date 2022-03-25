@@ -115,7 +115,7 @@ let page: ComponentExport = ({ db }) => {
                 let date = await user.getValue("date");
                 let time = await user.getValue("time");
                 this.update({
-                    text: `Alright, ${name}!\n\nYour phone number is ${phone}\nYour date is ${date} at ${time}\n\nIs this correct?`,
+                    text: `Alright, ${name}!\n\nYour phone number is ${phone}\nYour date is ${moment(date, 'YYYY-MM-DD').format("DD.MM.YYYY")} at ${time}\n\nIs this correct?`,
                     buttons: [
                         [
                             { text: "❌", action: 'main', data: 'again' },

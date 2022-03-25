@@ -89,11 +89,17 @@ type ComponentActionHandlerThisUpdateArg = {
 type goToData = any;
 type pluginGoToData = {
     callback: {
-        page: "";
-        action?: "",
+        page: string;
+        action?: string,
     },
     [key: string]: any;
-} & goToData
+}
+
+type PluginButton = {
+    text: string;
+    plugin: string;
+    data: pluginGoToData
+}
 
 interface ComponentActionHandlerThisMethods {
     id: string;
@@ -186,6 +192,7 @@ interface MongoDataBase {
     collection_Users: MongoCollection,
     collection_specialCommandsHistory: MongoCollection,
     collection_UserDataCollection: MongoCollection,
+    collection_TempData: MongoCollection,
 }
 
 interface StartupChainInstances {
@@ -215,11 +222,17 @@ interface DB {
             addUserSpecialCommand: (ctx: TBFContext) => Promise<void>;
             getUserSpecialCommands: (ctx: TBFContext) => Promise<DatabaseMessage[]>;
             removeSpecialCommandsExceptLastOne: (ctx: TBFContext) => Promise<void>;
-        },
+        }
         addToRemoveMessages: (ctx: TBFContext, message_or_arrayMessages: Array<tt.Message> | tt.Message, trash?: boolean | undefined) => Promise<void>;
         removeMessages: (ctx: TBFContext, onlyTrash?: boolean | undefined) => Promise<void>;
         markAllMessagesAsTrash: (ctx: TBFContext) => Promise<void>,
         findOldMessages: (unix_lim: number) => Promise<DatabaseMessage[]>;
+    },
+
+    tempData: {
+        add: (messagespase: string, uniqid: string, data: any) => Promise<void>;
+        get: (messagespase: string, uniqid: string) => Promise<WithId<Document>>;
+        remove: (messagespase: string) => Promise<void>;
     },
 
     setValue: (ctx: TBFContext, key: string, value: any) => Promise<any>,
@@ -340,5 +353,8 @@ export {
     PaginatorComponent,
     ParseButtons,
     ParseButtonsReturn,
-    ComponentAction
+    ComponentAction,
+    ComponentActionHandlerThisUpdateArg,
+    ComponentActionHandlerThisSendArg,
+    PluginButton
 }

@@ -1,28 +1,27 @@
-import { ComponentExport } from "../../../lib/types"
+import { ComponentExport, ComponentActionHandlerThisUpdateArg, PluginButton } from "../../../lib/types"
 import backButton from "../components/backButton";
 
-let message = {
+function GoToGallery(name: string, place: string): PluginButton {
+    return {
+        text: name,
+        plugin: "gallery_viewer",
+        data: {
+            callback: {
+                page: "gallery",
+                action: "backFromPlugin"
+            },
+            params: { backButton: '◀️ Back to Categories' },
+            place
+        }
+    }
+}
+
+let message: ComponentActionHandlerThisUpdateArg = {
     text: `📷 What photos are you interested in?`,
     buttons: [
         [
-            {
-                text: "🍷 Bar",
-                plugin: "gallery_viewer",
-                data: {
-                    callback: { page: 'gallery', action: 'backFromPlugin' },
-                    params: { backButton: '◀️ Back to Categories' },
-                    place: 'bar'
-                },
-            },
-            {
-                text: "🌝 Veranda",
-                plugin: "gallery_viewer",
-                data: {
-                    callback: { page: 'gallery', action: 'backFromPlugin' },
-                    params: { backButton: '◀️ Back to Categories' },
-                    place: 'veranda'
-                }
-            }
+            GoToGallery("🍷 Bar", "bar"),
+            GoToGallery("🌝 Veranda", "veranda")
         ],
         backButton
     ]
