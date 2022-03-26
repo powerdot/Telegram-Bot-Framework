@@ -118,6 +118,7 @@ interface ComponentActionHandlerThisMethods {
         setValue: (key: string, value: any) => Promise<any>;
         removeValue: (key: string) => Promise<any>;
         destroy: () => Promise<any>;
+        collection: DBUserCollection
     }
 }
 
@@ -146,7 +147,7 @@ type ComponentAction = ComponentActionHandler | {
 }
 
 interface Component {
-    id: string;
+    id?: string;
     type?: string;
     name?: string;
     actions: {
@@ -209,6 +210,16 @@ type DatabaseMessage = {
     trash?: boolean | undefined;
 } | undefined
 
+type DBUserCollection = {
+    find: (query: object) => Promise<WithId<Document>>;
+    findAll: (query: object) => Promise<Array<WithId<Document>>>;
+    insert: (value: object) => Promise<InsertOneResult<Document>>;
+    update: (query: object, value: object) => Promise<UpdateResult>;
+    updateMany: (query: object, value: object) => Promise<Document | UpdateResult>;
+    delete: (query: object) => Promise<DeleteResult>;
+    deleteMany: (query: object) => Promise<DeleteResult>;
+}
+
 interface DB {
     bot: Telegraf<TBFContext>,
     messages: {
@@ -253,15 +264,7 @@ interface DB {
             destroy: (ctx: TBFContext) => Promise<any>,
         },
         destroy: (ctx: TBFContext) => Promise<any>,
-        collection: (ctx: TBFContext, collection_name: string) => {
-            find: (query: object) => Promise<WithId<Document>>;
-            findAll: (query: object) => Promise<Array<WithId<Document>>>;
-            insert: (value: object) => Promise<InsertOneResult<Document>>;
-            update: (query: object, value: object) => Promise<UpdateResult>;
-            updateMany: (query: object, value: object) => Promise<Document | UpdateResult>;
-            delete: (query: object) => Promise<DeleteResult>;
-            deleteMany: (query: object) => Promise<DeleteResult>;
-        }
+        collection: (ctx: TBFContext, collection_name: string) => DBUserCollection
     }
 }
 
@@ -269,6 +272,7 @@ interface DB {
 interface PaginatorComponent {
     module: ComponentExport,
     path: string,
+    id: string,
 }
 interface PaginatorReturn {
     list: (componentType: string) => PaginatorComponent[]
@@ -293,6 +297,10 @@ interface TBFConfig {
     }
     autoRemoveMessages?: boolean;
     debug?: boolean;
+    webServer?: {
+        port: any;
+        address: string;
+    }
 }
 
 interface TBFArgs {
@@ -301,8 +309,6 @@ interface TBFArgs {
         apiUrl?: string;
     }
     webServer?: {
-        address: string;
-        port: number | string;
         module?: any;
     },
     mongo?: {

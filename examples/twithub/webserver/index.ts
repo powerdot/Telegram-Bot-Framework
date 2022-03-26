@@ -1,6 +1,6 @@
 import type { WebServerArgs } from "../../../lib/types";
 
-module.exports = ({ bot, db, database, pages }: WebServerArgs) => {
+module.exports = ({ bot, db, database, components }: WebServerArgs) => {
   let express = require("express");
   let router = express.Router();
   let path = require("path");
@@ -10,7 +10,7 @@ module.exports = ({ bot, db, database, pages }: WebServerArgs) => {
     extended: true
   }));
 
-  router.use('/api', require('./api')({ bot, db, database, pages } as WebServerArgs));
+  router.use('/api', require('./api')({ bot, db, database, components } as WebServerArgs));
 
   router.use(express.static(path.resolve(__dirname, './public')));
 

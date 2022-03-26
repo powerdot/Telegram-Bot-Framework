@@ -75,7 +75,8 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                             callback_data = await routeToAction(ctx, component_name, 'main', button.data);
                         }
                         if (button.url) {
-                            url = button.url;
+                            url = button.url.indexOf("http") == 0 ? button.url : config.webServer.address + button.url;
+                            console.log("url:", url)
                         }
                     }
                     new_row.push({
@@ -86,6 +87,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                 }
                 inline_buttons.push(new_row);
             }
+            console.log("inline_buttons:", inline_buttons)
             return resolve(inline_buttons);
         })
     }
@@ -107,12 +109,9 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                 config,
                 parseButtons
             })
+            if (!pageObject.id) pageObject.id = page.id;
         } catch (error) {
             console.log('📛', "Component loading error:", page.path, error);
-            continue;
-        }
-        if (!pageObject.id) {
-            console.error('📛', "Component without id:", page.path);
             continue;
         }
         if (loadedComponents.find(x => x.id == pageObject.id)) {
@@ -245,6 +244,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     setValue: async (key, value) => db.setValue(user_id || _this.ctx, key, value),
                     removeValue: async (key) => db.removeValue(user_id || _this.ctx, key),
                     destroy: async () => db.user.destroy(user_id || _this.ctx.chatId),
+                    collection: db.user.collection(_this.ctx, user_id || _this.ctx.chatId)
                 }
             }
         }

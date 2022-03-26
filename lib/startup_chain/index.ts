@@ -1,6 +1,6 @@
 import { MongoDataBase, Telegraf, StartupChainInstances, TBFArgs } from "../types";
 
-function activate({ telegram, mongo, webServer }: TBFArgs): Promise<StartupChainInstances> {
+function activate({ telegram, mongo, webServer, config }: TBFArgs): Promise<StartupChainInstances> {
     return new Promise(async resolve => {
         let _bot = require("./bot");
         let _database = require("./database");
@@ -10,7 +10,7 @@ function activate({ telegram, mongo, webServer }: TBFArgs): Promise<StartupChain
             let instances: StartupChainInstances = {
                 bot: await _bot(telegram),
                 database: await _database(mongo),
-                app: (webServer && webServer.module) ? await _webserver(webServer) : undefined
+                app: (webServer && webServer.module) ? await _webserver(webServer, config) : undefined
             }
             return resolve(instances);
         } catch (error) {

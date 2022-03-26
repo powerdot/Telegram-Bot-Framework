@@ -1,11 +1,9 @@
 module.exports = function ({
-    address,
-    port,
     module,
-}) {
+}, config) {
     // HTTP Service
     let express = require("express");
-    let _address = address;
+    let _address = config.webServer.address;
     if (!_address) {
         console.log('📛', 'Set web server address');
         process.exit();
@@ -13,8 +11,8 @@ module.exports = function ({
         console.log("ℹ️ ", "Bot's web server address:", _address);
     }
 
-    let _port = port;
-    if (!port) {
+    let _port = config.webServer.port;
+    if (!_port) {
         console.log('📛', 'Set port .env');
         process.exit();
     } else {

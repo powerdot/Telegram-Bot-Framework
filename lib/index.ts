@@ -19,13 +19,19 @@ module.exports.create = ({ webServer, telegram, mongo, config }: TBFArgs) => {
             path: "./plugins",
         },
         autoRemoveMessages: true,
-        debug: false
+        debug: false,
+        webServer: {
+            port: 8080,
+            address: "",
+        }
     }
 
     let _config = Object.assign(default_config, config);
 
+    if (_config.webServer?.address) _config.webServer.address = _config.webServer.address.replace('//localhost', '//127.0.0.1');
+
     return new Promise(async (resolve, reject) => {
-        require("../lib/startup_chain")({ webServer, telegram, mongo } as TBFArgs).then(async ({ bot, app, database }: StartupChainInstances) => {
+        require("../lib/startup_chain")({ webServer, telegram, mongo, config: _config } as TBFArgs).then(async ({ bot, app, database }: StartupChainInstances) => {
             let db: DB = require("../lib/helpers/db")(bot, database);
             let { pages, plugins }: { pages: Component[], plugins: Component[] } = require("../lib/page_loader")({ db, config: _config });
             let components = [...pages, ...plugins];

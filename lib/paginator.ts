@@ -13,7 +13,7 @@ module.exports = function ({ config }): PaginatorReturn {
             if (!fs.existsSync(normalizedPath)) return [];
             fs.readdirSync(normalizedPath).forEach(function (file) {
                 let component_path = normalizedPath + file;
-                csstts.push({ module: require(component_path), path: component_path });
+                csstts.push({ module: require(component_path), path: component_path, id: file.split(".")[0] });
             });
             return csstts;
         }

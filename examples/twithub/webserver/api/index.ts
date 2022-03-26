@@ -1,17 +1,29 @@
 import type { WebServerArgs } from "../../../../lib/types";
 
-module.exports = ({ bot, db }: WebServerArgs) => {
+module.exports = ({ bot, database }: WebServerArgs) => {
     let express = require("express");
     let router = express.Router();
 
-    router.all("/", (req, res) => {
-        return res.send("api hi!")
-    });
+    router.get("/posts", async (req, res) => {
+        let chatId = req.query.chatId;
 
-    router.get("/stats", async (req, res) => {
+        if (!chatId) { // all posts
+            let posts = await database.collection_UserDataCollection.find({
+                type: "post"
+            }).sort({
+                _id: -1
+            }).limit(100).toArray();
+            return res.send(posts);
+        }
 
-
-        return res.send({});
+        // posts of user
+        let posts = await database.collection_UserDataCollection.find({
+            type: "post",
+            chatId: Number(chatId)
+        }).sort({
+            _id: -1
+        }).limit(5).toArray();
+        return res.send(posts)
     });
 
     return router;

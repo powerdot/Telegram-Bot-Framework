@@ -9,20 +9,22 @@ const TBF: TelegramBotFramework = require("../../lib");
 TBF.create({
     webServer: {
         module: require("./webserver"),
-        port: process.env.PORT || 8383,
-        address: process.env.ADDRESS || ""
     },
     telegram: {
         token: process.env.TOKEN,
     },
     mongo: {
         url: process.env.MONGO_URL,
-        dbName: process.env.MONGO_DB
+        dbName: "twithub_example"
     },
     config: {
         debug: true,
         pages: {
             path: './examples/twithub/pages'
+        },
+        webServer: {
+            port: process.env.TWITHUB_PORT || 8383,
+            address: process.env.TWITHUB_ADDRESS || ""
         }
     }
 }).then(({ bot, db, openPage }) => {

@@ -1,0 +1,65 @@
+.welcomeMessage{
+    cursor: default;
+    padding:  20px;
+    padding-top: 40px;
+    background: white;
+    border-radius: 0px 0px 20px 20px;
+}
+.welcomeMessage .title{
+    font-size: 2em;
+    font-weight: bold;
+    color: #3f51b5;
+}
+.welcomeMessage .subtitle{
+    font-size: 10pt;
+}
+.welcomeMessage .subtitle p{
+    margin: 0;
+    margin-bottom: 2px;
+}
+
+.posts{
+    margin-top: 20px;
+}
+.posts .post {
+    background: white;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    padding: 10px 15px;
+}
+.posts .post .info{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.posts .post .info .user{
+    display: flex;
+    align-items: center;
+}
+.posts .post .info .emoji{
+    background: #3f51b5;
+    padding: 6px 10px;
+    border-radius: 200px;
+    cursor: default;
+    font-size: 20px;
+    margin-right: 10px;
+}
+.posts .post .info a{
+    text-decoration: none;
+    font-weight: bold;
+    color: #3f51b5;
+}
+.posts .post .info .datetime{
+    cursor: default;
+    font-size: 10pt;
+    color: gray;
+}
+.posts .post .message{
+    margin-top: 5px;
+}
+.posts .post .sent_by{
+    margin-top: 10px;
+    font-size: 10pt;
+    cursor: default;
+    color: gray;
+}

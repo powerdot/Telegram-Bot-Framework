@@ -48,7 +48,11 @@ module.exports = ({ db, components }: { db: DB, components: Component[] }) => {
 
         if (routing.component) {
             let component = components.find(p => p.id == routing.component);
-            if (component) component.call(ctx)
+            if (component) {
+                component.call(ctx)
+            } else {
+                console.log(`💔 Component with ID ${routing.component} not found.`);
+            }
         }
         return next();
     }
