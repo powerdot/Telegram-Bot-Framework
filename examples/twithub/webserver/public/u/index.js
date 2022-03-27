@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
     })
     document.querySelector(".accountName").innerHTML = `@${chatId}'s account`;
     setInterval(function () {
-        getPosts(null, function (posts) {
+        getPosts(chatId, function (posts) {
             window['renderPosts'](posts);
         });
     }, 1000);
