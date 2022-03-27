@@ -183,13 +183,18 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     let lastBotMessage = await db.messages.bot.getLastMessage(_this.ctx);
                     if (lastBotMessage) {
                         console.log("message to update:", lastBotMessage);
-                        let edited = await _this.ctx.telegram.editMessageText(
-                            _this.ctx.chatId,
-                            lastBotMessage.messageId,
-                            undefined,
-                            text,
-                            { ...options, parse_mode: 'HTML' }
-                        );
+                        let edited;
+                        try {
+                            edited = await _this.ctx.telegram.editMessageText(
+                                _this.ctx.chatId,
+                                lastBotMessage.messageId,
+                                undefined,
+                                text,
+                                { ...options, parse_mode: 'HTML' }
+                            );
+                        } catch (e) {
+                            console.log("⚠️", "Warning:", e);
+                        }
                         await db.messages.removeMessages(_this.ctx, true);
                         return edited;
                     }

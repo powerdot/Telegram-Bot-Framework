@@ -3,4 +3,10 @@ document.addEventListener('DOMContentLoaded', function () {
     getPosts(chatId, function (posts) {
         window['renderPosts'](posts);
     })
+    document.querySelector(".accountName").innerHTML = `@${chatId}'s account`;
+    setInterval(function () {
+        getPosts(null, function (posts) {
+            window['renderPosts'](posts);
+        });
+    }, 1000);
 }, false);

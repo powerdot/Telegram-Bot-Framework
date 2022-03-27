@@ -18,14 +18,36 @@
     margin-bottom: 2px;
 }
 
+.accountHeader{
+    cursor: default;
+    padding:  20px;
+    padding-top: 40px;
+    background: white;
+    border-radius: 0px 0px 20px 20px;
+}
+.accountHeader .title{
+    font-size: 2em;
+    font-weight: bold;
+    color: #3f51b5;
+}
+.accountHeader .subtitle{
+    font-size: 10pt;
+}
+.accountHeader .subtitle .accountName{
+    font-size: 1.5em;
+}
+
 .posts{
     margin-top: 20px;
 }
 .posts .post {
     background: white;
-    margin-bottom: 10px;
+    margin: 10px 10px;
     border-radius: 10px;
     padding: 10px 15px;
+}
+.posts .post:last-child{
+    margin-bottom: 40px;
 }
 .posts .post .info{
     display: flex;
@@ -56,6 +78,7 @@
 }
 .posts .post .message{
     margin-top: 5px;
+    white-space: pre-line;
 }
 .posts .post .sent_by{
     margin-top: 10px;

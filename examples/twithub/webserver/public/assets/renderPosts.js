@@ -1,7 +1,7 @@
 (function () {
 
     let PostComponent = `
-    <div class="post">
+    <div class="post" id="[POSTID]">
         <div class='info'>
             <div class='user'>
                 <div class='emoji'>[EMOJI]</div>
@@ -40,10 +40,10 @@
 
     window['renderPosts'] = function (posts) {
         let postsHolderElement = document.querySelector('.posts');
-
         let postsNodes = [];
         for (let post of posts) {
             let newPost = PostComponent.toString();
+            newPost = newPost.replace(/\[POSTID\]/g, post._id);
             newPost = newPost.replace(/\[EMOJI\]/g, Emojis[post.chatId % Emojis.length]);
             newPost = newPost.replace(/\[CHATID\]/g, post.chatId);
             newPost = newPost.replace(/\[DATETIME\]/g, formatDate(post.createdAt));
