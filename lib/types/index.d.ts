@@ -88,7 +88,7 @@ type ComponentActionHandlerThisUpdateArg = {
 
 type goToData = any;
 type pluginGoToData = {
-    callback: {
+    callback?: {
         page: string;
         action?: string,
     },

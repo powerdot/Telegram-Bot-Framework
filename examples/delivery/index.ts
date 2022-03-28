@@ -8,16 +8,19 @@ const TBF: TelegramBotFramework = require("../../lib");
 
 TBF.create({
     telegram: {
-        token: process.env.TOKEN,
+        token: process.env.DELIVERY_TOKEN,
     },
     mongo: {
         url: process.env.MONGO_URL,
-        dbName: process.env.MONGO_DB
+        dbName: 'delivery_example'
     },
     config: {
         debug: true,
         pages: {
-            path: './examples/delivery/pages'
+            path: './examples/delivery/pages',
+        },
+        plugins: {
+            path: './examples/delivery/plugins',
         }
     }
 }).then(({ bot, db, openPage }) => {
@@ -26,7 +29,7 @@ TBF.create({
         console.log("start", ctx.from.id);
         await db.messages.removeMessages(ctx);
         await db.messages.user.removeSpecialCommandsExceptLastOne(ctx);
-        await db.user.data.destroy(ctx);
+        // await db.user.data.destroy(ctx);
         await openPage({ ctx, pageId: "index" });
     });
 

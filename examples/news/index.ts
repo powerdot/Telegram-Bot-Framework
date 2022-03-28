@@ -8,7 +8,7 @@ const TBF: TelegramBotFramework = require("../../lib");
 
 TBF.create({
     telegram: {
-        token: process.env.TOKEN,
+        token: process.env.NEWS_TOKEN,
     },
     mongo: {
         url: process.env.MONGO_URL,

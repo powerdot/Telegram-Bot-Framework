@@ -11,7 +11,7 @@ TBF.create({
         module: require("./webserver"),
     },
     telegram: {
-        token: process.env.TOKEN,
+        token: process.env.TWITHUB_TOKEN,
     },
     mongo: {
         url: process.env.MONGO_URL,

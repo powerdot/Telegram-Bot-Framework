@@ -1,137 +1,75 @@
-import { ComponentExport } from "../../../lib/types"
+import { ComponentExport } from "../../../lib/types";
+let products = require("../assets/products");
 
 let page: ComponentExport = ({ db, config, paginator }) => {
     return {
-        id: "index",
-        name: "Главная страница",
         actions: {
-            main: {
-                clearChat: true,
-                async handler({ data }) {
-                    let text = `Привет - Привет!`
-                    if (data) {
-                        text += ` data sum: ${data.reduce((a, b) => a + b, 0)}`
-                    }
-                    this.send({
-                        text,
-                        buttons: [
-                            [{ text: "меню", action: "menu" }],
-                            [{ text: "помощь", action: "help" }],
-                            [{ text: "случайные числа", page: "random" }],
-                            [
-                                { text: "привет user", page: "name" },
-                                { text: "привет петя", page: "name", data: "петя" }
-                            ],
-                            [{ text: "да или нет", page: "yesornot" }],
-                            [
-                                { text: "storage test", action: "storage" },
-                                { text: "+1", action: "plusone" }
-                            ],
-                            [
-                                { text: "str", action: "datatest", data: "asdasdasd" },
-                                { text: "num", action: "datatest", data: 23 },
-                                { text: "obj", action: "datatest", data: { name: 'sdsdffsdf-sdffsd', id: '33343434' } },
-                                { text: "arr", action: "datatest", data: [{ name: 'sdsdfffsd', id: '333434' }] },
-                                { text: "bool", action: "datatest", data: true }
-                            ],
-                            [
-                                { text: "дай цифры", action: "numbers" },
-                                { text: "большие данные", action: "testbigdata" },
-                            ]
-                        ]
+            async main() {
+                await this.clearChat();
+                let user = this.user();
+                let owned = await user.collection.findAll({});
+                let checkoutButton = [];
+                if (owned.length > 0) checkoutButton.push([{ text: `🛒 Checkout (${owned.length})`, page: "checkout" }]);
+
+                this.send({
+                    text: `Hey! 🛵 Welcome to the delivery bot!\n\n👉Please choose one of categories\nor 💬 text me the name of the product you want to find.`,
+                    buttons: [
+                        [{ text: "🍔 Burgers", action: "category_selected", data: "burgers" }],
+                        [{ text: "🍟 Snacks", action: "category_selected", data: "snacks" }],
+                        [{ text: "🍕 Pizzas", action: "category_selected", data: "pizzas" }],
+                        [{ text: "🧁 Desserts", action: "category_selected", data: "desserts" }],
+                        ...checkoutButton
+                    ]
+                });
+            },
+            async category_selected({ data }) {
+                console.log("category_selected", data);
+                let page = 0;
+                let category = data;
+                if (typeof data === "object" && Array.isArray(data)) {
+                    page = data[0];
+                    category = products.find(p => p.id == data[1])?.category;
+                    if (!category) return;
+                }
+
+                let user = this.user();
+                let owned = await user.collection.findAll({});
+
+                let list_of_binded_products = [];
+                for (let product of products.filter(product => product.category === category)) {
+                    let product_owned = owned.filter(p => p.product_id === product.id).length;
+                    list_of_binded_products.push({
+                        ...product,
+                        text: `${product_owned ? product_owned + ' ✕ ' : ''}${product.name} - $${product.price}`,
+                        page: "index",
+                        action: "productSelected",
+                        data: product.id
                     })
                 }
-            },
-            numbers: {
-                async handler() {
-                    this.update({
-                        text: "Отправь мне цифорки)"
-                    })
-                },
-                async messageHandler({ text }) {
-                    if (text === undefined) {
-                        this.update({
-                            text: `ХОЧУ ЦИФОРКИ 😭`,
-                            buttons: [
-                                [
-                                    { text: "... выйти", action: "main" }
-                                ]
-                            ]
-                        })
-                    } else {
-                        let is_number = /^\d+$/.test(text)
-                        this.update({
-                            text: `Ты отправил ${text} - это ${is_number ? 'то шо нужно:))' : 'НЕ цифра('}\nМожешь отправить еще раз или...`,
-                            buttons: [
-                                [
-                                    { text: "... выйти", action: "main" }
-                                ]
-                            ]
-                        })
+
+                let footer_buttons = [
+                    { text: "⬅️ Back", page: 'index', action: "main" }
+                ];
+
+                if (owned.length > 0) footer_buttons.push({ text: `🛒 Checkout (${owned.length})`, page: "checkout", action: "main" });
+
+                this.goToPlugin({
+                    plugin: "list",
+                    data: {
+                        text: `Here is the list of ${category} 😋`,
+                        list: list_of_binded_products,
+                        footer_buttons: [footer_buttons],
+                        page
                     }
-                }
-            },
-            async datatest({ data }) {
-                this.update({
-                    text: "Данные: " + data + ", тип: " + typeof data,
-                    buttons: [
-                        [{ text: "обратно", action: "main", data: [1, 2] }],
-                    ]
                 })
             },
-            async storage() {
-                let user = await this.user();
-                await user.setValue("random", Math.random())
-                await user.setValue("keked", { kek: true })
-                let get = await user.getValue("random")
-                console.log('1. user.getValue("random")', get)
-                let get_keked = await user.getValue("keked")
-                console.log('1.1. user.getValue("keked")', get_keked)
-                let data = await user.get()
-                console.log('2. user.get()', data)
-                let users = await user.list()
-                console.log('3. user.list()', users)
-                this.update({
-                    text: "Тест пройден, смотри консоль",
-                    buttons: [
-                        [{ text: "обратно", action: "main" }],
-                    ]
-                })
-            },
-            async plusone() {
-                let userData = await this.user();
-                let value = (Number(await userData.getValue("plusone")) || 0) + 1
-                await userData.setValue("plusone", value)
-                this.update({
-                    text: "Результат: " + value,
-                    buttons: [
-                        [
-                            { text: "обратно", action: "main" },
-                            { text: "+1", action: "plusone" }
-                        ],
-                    ]
-                })
-            },
-            menu() {
-                this.update({
-                    text: "Выбери покушать: салат или сыр.",
-                    buttons: [
-                        [{ text: "назад!", action: "main" }],
-                    ]
-                })
-            },
-            help() {
-                this.update({
-                    text: "Бог тебе в помощь.",
-                    buttons: [
-                        [{ text: "спасибо!", action: "main" }],
-                        [{ text: "в меню", action: "menu" }],
-                    ]
-                })
-            },
-            testbigdata() {
-                this.clearChat()
-                this.goToAction({ action: "main", data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9] })
+            async productSelected({ data }) {
+                let product_id = data[1];
+                console.log("productSelected", data);
+
+                let user = this.user();
+                await user.collection.insert({ product_id });
+                this.goToAction({ action: "category_selected", data: data });
             }
         }
     }
