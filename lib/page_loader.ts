@@ -27,7 +27,14 @@ type loaderReturn = {
 
 let loadedComponents: Component[] = [];
 
+
 function loader({ db, config, inputComponents, componentType }: loaderArgs): loaderReturn {
+    async function removeMessageWrapper(sendKey, args = []) {
+        let sent = await this.ctx.telegram[sendKey](this.ctx.chatId, ...args);
+        await db.messages.addToRemoveMessages(this.ctx, sent, false);
+        return sent;
+    }
+
     function routeToAction(ctx: TBFContext, id: string, action: string = 'main', data: ComponentActionData): Promise<string> {
         return new Promise(async (resolve, reject) => {
             let parsedData = dataPacker.packData(data);
@@ -122,7 +129,8 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
             id: pageObject.id,
             type: pageObject.type,
             ctx: null,
-            async send(this: ComponentActionHandlerThis, { text = "", buttons = [], keyboard = [], images = [] }) {
+            async send(this: ComponentActionHandlerThis, { text = "", buttons = [], keyboard = [] }) {
+                let _this: ComponentActionHandlerThis = this;
                 if (text === undefined) throw new Error("send() text is empty");
                 let options = {
                     reply_markup: {
@@ -133,7 +141,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     }
                 };
                 if (buttons.length > 0) {
-                    let inline_buttons = await parseButtons({ ctx: this.ctx, id: this.id, buttons });
+                    let inline_buttons = await parseButtons({ ctx: _this.ctx, id: _this.id, buttons });
                     options.reply_markup.inline_keyboard = inline_buttons;
                 } else {
                     options.reply_markup.inline_keyboard = [];
@@ -145,18 +153,11 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     options.reply_markup.keyboard = [];
                 }
 
-                if (images.length) {
-                    console.log("images to send:", images);
-                    return await this.ctx.replyWithMediaGroup(
-                        images.map(x => ({ type: 'photo', media: x }))
-                    )
-                }
-                let message = await this.ctx.telegram.sendMessage(this.ctx.chatId, text, { ...options, parse_mode: 'HTML' });
-                await db.messages.addToRemoveMessages(this.ctx, [message], false)
+                let message = await _this.ctx.telegram.sendMessage(_this.ctx.chatId, text, { ...options, parse_mode: 'HTML' });
+                await db.messages.addToRemoveMessages(_this.ctx, [message], false)
                 return message;
             },
             async update(this: ComponentActionHandlerThis, { text = "", buttons = [], keyboard = [] }) {
-                let _this: ComponentActionHandlerThis = this;
                 if (text === undefined) throw new Error("update() text is empty");
 
                 let options = {
@@ -166,7 +167,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     }
                 };
                 if (buttons.length > 0) {
-                    let inline_buttons = await parseButtons({ ctx: _this.ctx, id: _this.id, buttons });
+                    let inline_buttons = await parseButtons({ ctx: this.ctx, id: this.id, buttons });
                     options.reply_markup.inline_keyboard = inline_buttons;
                 } else {
                     options.reply_markup.inline_keyboard = [];
@@ -178,15 +179,15 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     options.reply_markup.keyboard = [];
                 }
 
-                if (_this.ctx.routing.isMessageFromUser) {
+                if (this.ctx.routing.isMessageFromUser) {
                     // get last bot's message and update it
-                    let lastBotMessage = await db.messages.bot.getLastMessage(_this.ctx);
+                    let lastBotMessage = await db.messages.bot.getLastMessage(this.ctx);
                     if (lastBotMessage) {
                         console.log("message to update:", lastBotMessage);
                         let edited;
                         try {
-                            edited = await _this.ctx.telegram.editMessageText(
-                                _this.ctx.chatId,
+                            edited = await this.ctx.telegram.editMessageText(
+                                this.ctx.chatId,
                                 lastBotMessage.messageId,
                                 undefined,
                                 text,
@@ -195,12 +196,16 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                         } catch (e) {
                             console.log("⚠️", "Warning:", e);
                         }
-                        await db.messages.removeMessages(_this.ctx, true);
+                        await db.messages.removeMessages(this.ctx, true);
                         return edited;
                     }
                 }
 
                 return await this.ctx.editMessageText(text, { ...options, parse_mode: 'HTML' });
+            },
+            async sendMediaGroup(this: ComponentActionHandlerThis, { media = [], options = {} }) {
+                if (media.length === 0) throw new Error("sendMediaGroup() media is empty");
+                return removeMessageWrapper.bind(this)('sendMediaGroup', [media, options]);
             },
             async goToComponent(this: ComponentActionHandlerThis, { component, action = "main", data, type = "" }) {
                 if (!type) return Error("goToComponent() type is empty");
@@ -291,21 +296,21 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                         let handler_fn = extractHandler(handler);
                         await handler_fn.bind({ ...binding, ctx })({
                             ctx,
-                            text: ctx.message.text,
-                            photo: ctx.message.photo,
-                            video: ctx.message.video,
-                            animation: ctx.message.animation,
-                            document: ctx.message.document,
-                            voice: ctx.message.voice,
-                            audio: ctx.message.audio,
-                            poll: ctx.message.poll,
-                            sticker: ctx.message.sticker,
-                            location: ctx.message.location,
-                            contact: ctx.message.contact,
-                            venue: ctx.message.venue,
-                            game: ctx.message.game,
-                            invoice: ctx.message.invoice,
-                            dice: ctx.message.dice,
+                            text: "text" in ctx.message ? ctx.message.text : undefined,
+                            photo: "photo" in ctx.message ? ctx.message.photo : undefined,
+                            video: "video" in ctx.message ? ctx.message.video : undefined,
+                            animation: "animation" in ctx.message ? ctx.message.animation : undefined,
+                            document: "document" in ctx.message ? ctx.message.document : undefined,
+                            voice: "voice" in ctx.message ? ctx.message.voice : undefined,
+                            audio: "audio" in ctx.message ? ctx.message.audio : undefined,
+                            poll: "poll" in ctx.message ? ctx.message.poll : undefined,
+                            sticker: "sticker" in ctx.message ? ctx.message.sticker : undefined,
+                            location: "location" in ctx.message ? ctx.message.location : undefined,
+                            contact: "contact" in ctx.message ? ctx.message.contact : undefined,
+                            venue: "venue" in ctx.message ? ctx.message.venue : undefined,
+                            game: "game" in ctx.message ? ctx.message.game : undefined,
+                            invoice: "invoice" in ctx.message ? ctx.message.invoice : undefined,
+                            dice: "dice" in ctx.message ? ctx.message.dice : undefined,
                         });
                         console.log("MESSAGE", ctx.message);
                     } else {

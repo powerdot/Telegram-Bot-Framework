@@ -47,10 +47,7 @@ let page: ComponentExport = ({ db, config, paginator }) => {
                             buttons: await makeMenuButtos(this)
                         });
                     }
-                    this.goToPage({
-                        page: 'product',
-                        data: [0, [1, found]]
-                    })
+                    this.goToPage({ page: 'product', data: [0, [1, found]] });
                 }
             },
             async category_selected({ data }) {
@@ -78,10 +75,7 @@ let page: ComponentExport = ({ db, config, paginator }) => {
                     })
                 }
 
-                let footer_buttons = [
-                    { text: "⬅️ Back", page: 'index', action: "main" }
-                ];
-
+                let footer_buttons = [{ text: "⬅️ Back", page: 'index', action: "main" }];
                 if (owned.length > 0) footer_buttons.push({ text: `🛒 Checkout (${owned.length})`, page: "checkout", action: "main" });
 
                 this.goToPlugin({

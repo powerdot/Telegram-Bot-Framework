@@ -23,12 +23,12 @@ module.exports = ({ db, components }: { db: DB, components: Component[] }) => {
             data: undefined,
             step: step_,
             message: undefined,
-            messageTypes: ctx.updateSubTypes,
+            messageTypes: ctx.updateType,
             isMessageFromUser: false
         };
         ctx.routing = routing;
         if (ctx.updateType == 'message') {
-            routing.message = ctx.update.message;
+            routing.message = "message" in ctx.update ? ctx.update.message : undefined;
             routing.isMessageFromUser = true;
         }
         if (parseCallbackPath) {

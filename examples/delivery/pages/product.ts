@@ -10,8 +10,8 @@ let page: ComponentExport = ({ db, config, paginator }) => {
                 let product = products.find(x => x.id === product_id);
 
                 await this.clearChat();
-                await this.send({
-                    images: [product.image]
+                await this.sendMediaGroup({
+                    media: [{ type: 'photo', media: product.image }]
                 });
 
                 this.goToAction({
@@ -77,7 +77,7 @@ let page: ComponentExport = ({ db, config, paginator }) => {
                     backRouter = { page: "checkout", action: "main", data: list_page };
                 }
                 let botMessages = await db.messages.bot.getMessages(this.ctx, 2);
-                let imageMessage = botMessages.find(x => x.message.photo);
+                let imageMessage = botMessages.find(x => "photo" in x.message);
                 await db.removeMessage(this.ctx, imageMessage.messageId, 'bot');
                 this.goToPage(backRouter);
             }

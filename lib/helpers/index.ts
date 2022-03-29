@@ -15,7 +15,7 @@ function declOfNum(number: number, titles: string[]) {
 
 function parseCallbackPath(ctx: TBFContext) {
   if (ctx.updateType != 'callback_query') return false;
-  let callback_data = ctx?.routeTo || ctx.callbackQuery?.data;
+  let callback_data = ctx?.routeTo || ("data" in ctx.callbackQuery ? ctx.callbackQuery.data : undefined);
 
   // current - index 0
   let result = [];

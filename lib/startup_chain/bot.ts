@@ -3,7 +3,7 @@ module.exports = function ({
     apiUrl
 }) {
     return new Promise(async resolve => {
-        const Telegraf = require('telegraf');
+        const { Telegraf } = require('telegraf')
 
         let _token = token;
         if (!_token) {
@@ -32,7 +32,6 @@ module.exports = function ({
 
         bot.launch().then(() => {
             console.log("ℹ️ ", "Telegram bot launched");
-            bot.startPolling()
             resolve(bot);
             return;
         })

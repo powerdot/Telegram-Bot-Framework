@@ -29,7 +29,6 @@ let page: ComponentExport = ({ db, config, paginator }) => {
                     { text: "⬅️ Back", page: 'index', action: "main" },
                     { text: "🗑 Clear", page: 'checkout', action: "clear_cart" }
                 ];
-
                 if (owned.length > 0) footer_buttons.push({ text: `🛍 Buy for $${sum}`, page: "checkout", action: "buy" });
 
                 this.goToPlugin({

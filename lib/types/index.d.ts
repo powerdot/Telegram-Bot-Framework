@@ -1,6 +1,6 @@
 import { Telegraf, Markup, Context as TelegrafContext } from 'telegraf';
 import { Application as ExpressApp } from "express"
-import * as tt from 'telegraf/typings/telegram-types';
+import * as tt from 'telegraf/src/core/types/typegram';
 
 type TelegramMessage = tt.Message;
 
@@ -27,7 +27,7 @@ interface TBFContext extends TelegrafContext {
         step?: string
         next_step?: string
         message?: TelegramMessage
-        messageTypes: Array<string>
+        messageTypes: string
         isMessageFromUser: boolean
     }
 }
@@ -36,7 +36,7 @@ type ComponentActionArg = {
     ctx: TBFContext;
     data?: ComponentActionData;
     text?: string;
-    photo?: tt.MessagePhoto;
+    photo?: tt.ChatPhoto;
     video?: tt.Video;
     animation?: tt.Animation;
     document?: tt.Document;
@@ -75,7 +75,6 @@ type Keyboard = Array<KeyboardRow>
 
 type ComponentActionHandlerThisSendArg = {
     text?: string,
-    images?: Array<string>,
     buttons?: MessageButtons,
     keyboard?: Keyboard
 }
@@ -106,6 +105,7 @@ interface ComponentActionHandlerThisMethods {
     type: string;
     send: (arg: ComponentActionHandlerThisSendArg) => Promise<any>;
     update: (arg: ComponentActionHandlerThisUpdateArg) => Promise<any>;
+    sendMediaGroup: (arg: ComponentActionHandlerThisSendArg & { media: any[], options?: object }) => Promise<any>;
     goToAction: (arg: { action: string, data?: goToData }) => Promise<any>;
     goToPage: (arg: { page: string, action?: string, data?: goToData }) => Promise<any>;
     goToComponent: (arg: { component: string, action?: string, data?: goToData, type: string }) => Promise<any>;
