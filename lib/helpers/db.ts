@@ -97,13 +97,7 @@ module.exports = (
       for (let currentMessageToRemove of currentBotMessagesToRemove) {
         let messageId = currentMessageToRemove.messageId;
         if (!messageId) continue;
-        console.log("removing", messageId)
-        try {
-          bot.telegram.deleteMessage(chatId, messageId).catch(e => { });
-        } catch (error) {
-          // console.error("error deleting messageId:", chatId, messageId)
-        }
-        collection_BotMessageHistory.deleteOne({ chatId, messageId });
+        removeMessage(ctx, messageId, 'bot')
       }
     }
     let currentUserMessagesToRemove: DatabaseMessage[] = await (await collection_UserMessageHistory.find<DatabaseMessage>(onlyTrash ? queryTrash : query)).toArray();
@@ -112,13 +106,7 @@ module.exports = (
       for (let currentMessageToRemove of currentUserMessagesToRemove) {
         let messageId = currentMessageToRemove.messageId;
         if (!messageId) continue;
-        console.log("removing", messageId)
-        try {
-          bot.telegram.deleteMessage(chatId, messageId).catch(e => { });
-        } catch (error) {
-          // console.error("error deleting messageId:", chatId, messageId)
-        }
-        collection_UserMessageHistory.deleteOne({ chatId, messageId });
+        removeMessage(ctx, messageId, 'user')
       }
     }
     return;
@@ -138,6 +126,17 @@ module.exports = (
         console.error('addToRemoveMessages error', e)
       });
     }
+  }
+
+  async function removeMessage(ctx: TBFContext, messageId, scope = 'bot') {
+    let chatId = ctx.chatId;
+    console.log("removing", chatId, messageId)
+    let selectedCollection = scope === 'bot' ? collection_BotMessageHistory : collection_UserMessageHistory;
+    await selectedCollection.deleteOne({ chatId, messageId });
+    try {
+      bot.telegram.deleteMessage(chatId, messageId).catch(e => { });
+    } catch (error) { }
+    return true;
   }
 
   async function markAllMessagesAsTrash(ctx: TBFContext) {
@@ -307,6 +306,7 @@ module.exports = (
       remove: TempDataRemove
     },
 
+    removeMessage,
     setValue,
     getValue,
     removeValue,

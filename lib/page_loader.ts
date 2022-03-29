@@ -152,7 +152,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     )
                 }
                 let message = await this.ctx.telegram.sendMessage(this.ctx.chatId, text, { ...options, parse_mode: 'HTML' });
-                db.messages.addToRemoveMessages(this.ctx, [message], false)
+                await db.messages.addToRemoveMessages(this.ctx, [message], false)
                 return message;
             },
             async update(this: ComponentActionHandlerThis, { text = "", buttons = [], keyboard = [] }) {

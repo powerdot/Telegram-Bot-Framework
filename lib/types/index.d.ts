@@ -246,6 +246,7 @@ interface DB {
         remove: (messagespase: string) => Promise<void>;
     },
 
+    removeMessage: (ctx: TBFContext, messageId: number, scope: string) => Promise<boolean>,
     setValue: (ctx: TBFContext, key: string, value: any) => Promise<any>,
     getValue: (ctx: TBFContext, key: string) => Promise<any>,
     removeValue: (ctx: TBFContext, key: string) => Promise<any>,

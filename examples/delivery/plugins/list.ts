@@ -8,14 +8,16 @@ let page: ComponentExport = ({ db, config, paginator }) => {
                 let list = d.list;
                 let page = d.page || 0;
                 let page_size = d.page_size || 5;
+                let page_count = Math.ceil(list.length / page_size);
+                if (page >= page_count) page = page_count - 1;
                 let footer_buttons = d.footer_buttons || [];
                 let message_text = d.text;
 
                 let user = this.user();
                 await user.setValue("list_active", list);
-                await user.setValue("list_page", d.page || 0);
+                await user.setValue("list_page", page);
                 await user.setValue("list_page_size", page_size);
-                await user.setValue("list_page_count", Math.ceil(list.length / page_size));
+                await user.setValue("list_page_count", page_count);
                 await user.setValue("list_footer_buttons", footer_buttons);
                 await user.setValue("list_message_text", message_text);
 
