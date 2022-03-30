@@ -38,7 +38,6 @@ module.exports.create = ({ webServer, telegram, mongo, config }: TBFArgs) => {
 
             bot.use(require("../lib/bot_middlewares/set_ids")());
 
-            bot.use(require("../lib/bot_middlewares/mark_user_messages_to_delete")({ db }));
             bot.use(require("../lib/bot_middlewares/spam")());
             bot.use(require("../lib/bot_middlewares/mark_user_messages")({ db }));
 
