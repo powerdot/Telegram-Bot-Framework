@@ -294,7 +294,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     if (handler) {
                         if (handler.clearChat) await db.messages.removeMessages(ctx);
                         let handler_fn = extractHandler(handler);
-                        await handler_fn.bind({ ...binding, ctx })({
+                        let result = await handler_fn.bind({ ...binding, ctx })({
                             ctx,
                             text: "text" in ctx.message ? ctx.message.text : undefined,
                             photo: "photo" in ctx.message ? ctx.message.photo : undefined,
@@ -312,6 +312,11 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                             invoice: "invoice" in ctx.message ? ctx.message.invoice : undefined,
                             dice: "dice" in ctx.message ? ctx.message.dice : undefined,
                         });
+                        if (typeof result === "boolean") {
+                            if (!result) {
+                                await db.messages.removeMessages(ctx, true);
+                            }
+                        }
                         console.log("MESSAGE", ctx.message);
                     } else {
                         await db.messages.removeMessages(ctx, true);

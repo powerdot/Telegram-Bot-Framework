@@ -30,7 +30,7 @@ let page: ComponentExport = ({ db }) => {
                     }
                 },
                 messageHandler({ text }) {
-                    if (!text) return;
+                    if (!text) return false;
                     if (text.length > 20) {
                         this.update({
                             text: `😦 Name is too large!\nTry again.`,
@@ -68,7 +68,7 @@ let page: ComponentExport = ({ db }) => {
                     });
                 },
                 messageHandler({ text }) {
-                    if (!text) return;
+                    if (!text) return false;
                     if (text.length > 20) {
                         this.update({
                             text: `😦 Phone number is too large!\nTry again.`,

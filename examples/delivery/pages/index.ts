@@ -38,7 +38,7 @@ let page: ComponentExport = ({ db, config, paginator }) => {
                     });
                 },
                 async messageHandler({ text }) {
-                    if (!text) return;
+                    if (!text) return false;
                     let results = miniSearch.search(text);
                     let found = results[0]?.id;
                     if (!found) {

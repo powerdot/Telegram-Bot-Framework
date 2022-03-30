@@ -27,7 +27,7 @@ interface TBFContext extends TelegrafContext {
         step?: string
         next_step?: string
         message?: TelegramMessage
-        messageTypes: string
+        // messageTypes: string
         isMessageFromUser: boolean
     }
 }

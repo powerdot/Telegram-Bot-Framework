@@ -35,7 +35,7 @@ let page: ComponentExport = () => {
                     });
                 },
                 messageHandler({ text }) {
-                    if (!text) return;
+                    if (!text) return false;
                     let results = miniSearch.search(text);
                     if (results.length) {
                         this.update({

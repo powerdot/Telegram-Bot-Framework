@@ -23,7 +23,7 @@ module.exports = ({ db, components }: { db: DB, components: Component[] }) => {
             data: undefined,
             step: step_,
             message: undefined,
-            messageTypes: ctx.updateType,
+            // messageTypes: ctx.updateType,
             isMessageFromUser: false
         };
         ctx.routing = routing;

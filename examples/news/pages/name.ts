@@ -18,8 +18,8 @@ let page: ComponentExport = ({ db, config, paginator }) => {
                         ]
                     })
                 },
-                messageHandler({ ctx }) {
-                    let name = ctx.message.text;
+                messageHandler({ text }) {
+                    let name = text;
                     this.update({
                         text: `Привет, ${name}!`,
                         buttons: [

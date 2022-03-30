@@ -25,7 +25,7 @@ let page: ComponentExport = ({ db, config, paginator }) => {
                     })
                 },
                 async messageHandler({ text }) {
-                    if (!text) return;
+                    if (!text) return false;
                     let clearedText = text.trim();
                     if (clearedText.length > 70) return;
 

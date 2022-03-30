@@ -44,7 +44,7 @@ let page: ComponentExport = ({ db, parseButtons }) => {
                 let show_photo_index = user_current_photo;
 
                 await this.clearChat();
-                await this.send({ images: [photos[place][show_photo_index].url] });
+                await this.sendMediaGroup({ media: [{ type: 'photo', media: photos[place][show_photo_index].url }] });
                 await this.send({
                     text: `${photos[place][show_photo_index].description}`,
                     buttons: buildGalleryButtons(_data),
@@ -76,8 +76,8 @@ let page: ComponentExport = ({ db, parseButtons }) => {
 
                 // get bot messages on screen (to update content)
                 let lastBotMessages = await db.messages.bot.getMessages(this.ctx, 2);
-                let lastPhotoMessage = lastBotMessages.find(m => m.message.photo);
-                let lastTextMessage = lastBotMessages.find(m => m.message.text);
+                let lastPhotoMessage = lastBotMessages.find(m => 'photo' in m.message);
+                let lastTextMessage = lastBotMessages.find(m => 'text' in m.message);
 
                 // update photo message
                 let ctx = this.ctx;
@@ -101,7 +101,7 @@ let page: ComponentExport = ({ db, parseButtons }) => {
                 let _data = data as localActionData;
                 let place = _data.place;
                 await this.clearChat();
-                await this.send({ images: photos[place].map(photo => photo.url) });
+                await this.sendMediaGroup({ media: photos[place].map(photo => ({ type: 'photo', media: photo.url })) });
                 await this.send({
                     text: `All ${place} photos!`,
                     buttons: [[buildExitButton(_data)]]

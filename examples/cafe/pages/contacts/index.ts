@@ -42,7 +42,7 @@ let page: ComponentExport = ({ db }) => {
                     if (text === 'Back') {
                         return this.goToAction({ action: 'main', data: 'send_message' });
                     }
-                    if (!location) return;
+                    if (!location) return false;
                     let nearest = establishments.reduce((prev, curr) => {
                         let distance = calcCrow(location.latitude, location.longitude, curr.geo[0], curr.geo[1]);
                         if (!prev || distance < Object(prev)?.distance) {
