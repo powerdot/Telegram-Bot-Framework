@@ -2,7 +2,7 @@
   "name": "telegram_bot_framework",
   "version": "1.0.0",
   "description": "",
-  "main": "lib/index.js",
+  "main": "lib/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "example_cafe": "nodemon --inspect=3592 -e ts,tsx --exec node -r ts-node/register ./examples/cafe/index.ts",
