@@ -1,4 +1,4 @@
-import { ComponentExport } from "../../../../lib/types"
+import { ComponentExport } from "../../../../src/types"
 import backButton from '../../components/backButton';
 import calcCrow from './calcCrow';
 let { establishments, ourEstablishmentsText } = require('./establishments');

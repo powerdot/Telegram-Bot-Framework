@@ -2,9 +2,9 @@ require('dotenv').config()
 
 import type {
     TBF as TelegramBotFramework,
-} from "../../lib/types"
+} from "../../src/types"
 
-const TBF: TelegramBotFramework = require("../../lib");
+const TBF: TelegramBotFramework = require("../../src");
 
 TBF.create({
     webServer: {

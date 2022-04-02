@@ -3,7 +3,7 @@ import type {
   TBFContext,
   CallbackPath,
   CallbackPathRoute
-} from "../types/"
+} from "../types"
 
 
 function declOfNum(number: number, titles: string[]) {

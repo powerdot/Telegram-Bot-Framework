@@ -1,4 +1,4 @@
-import { ComponentExport } from "../../../lib/types"
+import { ComponentExport } from "../../../src/types"
 let moment = require("moment");
 
 let page: ComponentExport = () => {

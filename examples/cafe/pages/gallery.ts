@@ -1,4 +1,4 @@
-import { ComponentExport, ComponentActionHandlerThisUpdateArg, PluginButton } from "../../../lib/types"
+import { ComponentExport, ComponentActionHandlerThisUpdateArg, PluginButton } from "../../../src/types"
 import backButton from "../components/backButton";
 
 function GoToGallery(name: string, place: string): PluginButton {

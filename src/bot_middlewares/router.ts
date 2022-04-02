@@ -4,7 +4,7 @@ let helpers = require("../helpers");
 import dataPacker from "../data_packer";
 
 module.exports = ({ db, components }: { db: DB, components: Component[] }) => {
-    return async function (_ctx: TBFContext, next) {
+    return async function (_ctx: TBFContext, next: Function) {
         let ctx = _ctx;
         console.log('==============v')
         let step_ = await db.getValue(ctx, 'step');
@@ -16,14 +16,13 @@ module.exports = ({ db, components }: { db: DB, components: Component[] }) => {
                 action: step_.split("�")[1],
             }
         }
-        let routing = {
+        let routing: typeof ctx.routing = {
             type: ctx.updateType,
             component: undefined,
             action: undefined,
             data: undefined,
             step: step_,
             message: undefined,
-            // messageTypes: ctx.updateType,
             isMessageFromUser: false
         };
         ctx.routing = routing;
@@ -49,7 +48,7 @@ module.exports = ({ db, components }: { db: DB, components: Component[] }) => {
         if (routing.component) {
             let component = components.find(p => p.id == routing.component);
             if (component) {
-                component.call(ctx)
+                component?.call?.(ctx)
             } else {
                 console.log(`💔 Component with ID ${routing.component} not found.`);
             }

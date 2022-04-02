@@ -1,4 +1,4 @@
-import { ComponentExport } from "../../../lib/types";
+import { ComponentExport } from "../../../src/types";
 let products = require("../assets/products");
 
 let MiniSearch = require("../assets/minisearch.min.js");

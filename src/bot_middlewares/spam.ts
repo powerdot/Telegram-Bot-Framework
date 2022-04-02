@@ -1,7 +1,9 @@
 import type { TBFContext } from "../types"
 let moment = require('moment');
 
-let spam_store = {};
+let spam_store: {
+    [key: number]: number
+} = {};
 module.exports = () => {
     return async function (ctx: TBFContext, next) {
         if (!ctx.update) return next();

@@ -1,4 +1,4 @@
-import type { WebServerArgs } from "../../../../lib/types";
+import type { WebServerArgs } from "../../../../src/types";
 
 module.exports = ({ bot, database }: WebServerArgs) => {
     let express = require("express");

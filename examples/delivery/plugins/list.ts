@@ -1,4 +1,4 @@
-import { ComponentExport, ButtonsRow } from "../../../lib/types"
+import { ComponentExport, ButtonsRow } from "../../../src/types"
 
 let page: ComponentExport = ({ db, config, paginator }) => {
     return {

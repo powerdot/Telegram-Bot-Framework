@@ -1,4 +1,4 @@
-import { ComponentExport, ButtonsRowButton } from "../../../../lib/types"
+import { ComponentExport, ButtonsRowButton } from "../../../../src/types"
 import photos from "./photos";
 
 type localActionData = {

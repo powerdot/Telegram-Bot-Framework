@@ -1,4 +1,4 @@
-import { ComponentExport, ButtonsRowButton } from "../../../../lib/types"
+import { ComponentExport, ButtonsRowButton } from "../../../../src/types"
 import backButton from "../../components/backButton";
 import menu from "./menu";
 

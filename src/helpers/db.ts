@@ -1,10 +1,10 @@
-import { TBFContext, TelegramMessage, DB, tt, DatabaseMessage, MongoDataBase } from "../types"
+import { TBFContext, TelegramMessage, DB, tt, DatabaseMessage, MongoDataBase, Telegraf } from "../types"
 
 let moment = require("moment");
 let ObjectID = require('mongodb').ObjectID;
 
 module.exports = (
-  bot,
+  bot: Telegraf<TBFContext>,
   { client,
     collection_UserData,
     collection_BotMessageHistory,
@@ -16,19 +16,19 @@ module.exports = (
     collection_TempData,
   }: MongoDataBase): DB => {
 
-  async function getValue(ctx: TBFContext, key) {
+  async function getValue(ctx: TBFContext, key: string) {
     let data = await collection_UserData.findOne({ chatId: ctx.chatId, name: key });
     data = data ? data.value : undefined;
     console.log("[GET value]", key, '->', data);
     return data;
   }
 
-  async function setValue(ctx: TBFContext, key, value) {
+  async function setValue(ctx: TBFContext, key: string, value: any) {
     console.log("[SET value]", key, "=", value)
     return await collection_UserData.updateOne({ name: key, chatId: ctx.chatId }, { $set: { name: key, chatId: ctx.chatId, value } }, { upsert: true });
   }
 
-  async function removeValue(ctx: TBFContext, key) {
+  async function removeValue(ctx: TBFContext, key: string) {
     console.log("[REMOVE value]", key);
     return await collection_UserData.deleteOne({ name: key, chatId: ctx.chatId });
   }
@@ -86,7 +86,7 @@ module.exports = (
     }
   }
 
-  async function removeMessages(ctx: TBFContext, onlyTrash) {
+  async function removeMessages(ctx: TBFContext, onlyTrash: boolean) {
     let chatId = ctx.chatId;
     let query = { chatId };
     let queryTrash = { chatId, trash: onlyTrash };
@@ -95,7 +95,7 @@ module.exports = (
     // console.log("currentMessagesToRemove:", currentMessagesToRemove);
     if (currentBotMessagesToRemove.length != 0) {
       for (let currentMessageToRemove of currentBotMessagesToRemove) {
-        let messageId = currentMessageToRemove.messageId;
+        let messageId = currentMessageToRemove?.messageId;
         if (!messageId) continue;
         removeMessage(ctx, messageId, 'bot')
       }
@@ -112,7 +112,7 @@ module.exports = (
     return;
   }
 
-  async function addToRemoveMessages(ctx: TBFContext, message_or_arrayMessages: tt.Message | tt.Message[], trash) {
+  async function addToRemoveMessages(ctx: TBFContext, message_or_arrayMessages: tt.Message | tt.Message[], trash: boolean) {
     if (trash === undefined) trash = false;
     let chatId = ctx.chatId;
     let messages: TelegramMessage[] = [];
@@ -128,7 +128,7 @@ module.exports = (
     }
   }
 
-  async function removeMessage(ctx: TBFContext, messageId, scope = 'bot') {
+  async function removeMessage(ctx: TBFContext, messageId: number, scope = 'bot') {
     let chatId = ctx.chatId;
     console.log("removing", chatId, messageId)
     let selectedCollection = scope === 'bot' ? collection_BotMessageHistory : collection_UserMessageHistory;
@@ -174,7 +174,7 @@ module.exports = (
     return msg;
   }
 
-  async function botGetMessages(ctx: TBFContext, count = 10) {
+  async function botGetMessages(ctx: TBFContext, count: number = 10) {
     let chatId = ctx.chatId;
     let messages: DatabaseMessage[] = await collection_BotMessageHistory.find<DatabaseMessage>({ chatId }).sort({ messageId: -1 }).limit(count).toArray();
     if (!messages) messages = [];
@@ -187,7 +187,7 @@ module.exports = (
    * @param {String} type Тип данных, например, feedback
    * @param {Object} data Данные для сохранения
    */
-  async function _DataAdd(type, data) {
+  async function _DataAdd(type: string, data: any) {
     data.type = type;
     data.createdAt = moment();
     data.createdAtDate = new Date();
@@ -197,14 +197,14 @@ module.exports = (
     return true;
   }
 
-  async function _DataGet(type, query, sorting) {
+  async function _DataGet(type: string, query: any, sorting: any) {
     if (!sorting) sorting = {};
     query.type = type;
     let result = await collection_Data.find(query).sort(sorting).toArray();
     return result;
   }
 
-  async function _DataUpdate(_id, data) {
+  async function _DataUpdate(_id: string, data: any) {
     // console.log("_DataUpdate:",_id, data);
     let result = await collection_Data.updateOne({ _id: new ObjectID(_id) }, { $set: data }, { upsert: true });
     return result;
@@ -216,7 +216,7 @@ module.exports = (
     return us;
   }
 
-  async function _UserData_get(user_id) {
+  async function _UserData_get(user_id: number) {
     let data = await collection_UserData.find({ chatId: user_id }).toArray();
     let user_object = {};
     for (let d of data) {
@@ -274,7 +274,7 @@ module.exports = (
    * Находит все сообщения пользователя и бота, которые меньше определенного времени в unix timestamp
    * @param {*} unix_lim 
    */
-  async function findOldMessages(unix_lim) {
+  async function findOldMessages(unix_lim: number) {
     let b: DatabaseMessage[] = await collection_BotMessageHistory.find<DatabaseMessage>({ "message.date": { $lte: unix_lim } }).toArray();
     let u: DatabaseMessage[] = await collection_BotMessageHistory.find<DatabaseMessage>({ "message.date": { $lte: unix_lim } }).toArray();
     return [...b, ...u];
