@@ -6,4 +6,4 @@ const debug = (data) => console.log(inspect(data, {
   depth: 10,
 }))
 
-module.exports = debug
+export default debug

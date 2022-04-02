@@ -3,7 +3,7 @@ import { TBFContext, TelegramMessage, DB, tt, DatabaseMessage, MongoDataBase, Te
 let moment = require("moment");
 let ObjectID = require('mongodb').ObjectID;
 
-module.exports = (
+export default (
   bot: Telegraf<TBFContext>,
   { client,
     collection_UserData,

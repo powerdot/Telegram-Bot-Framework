@@ -4,7 +4,7 @@ import type {
     PaginatorReturn
 } from "./types"
 
-module.exports = function ({ config }): PaginatorReturn {
+export default function ({ config }): PaginatorReturn {
     return {
         list: function (componentType = "pages") {
             let components_path = config[componentType].path[config[componentType].path.length - 1] == '/' ? config[componentType].path : (config[componentType].path + "/");

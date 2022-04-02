@@ -43,7 +43,7 @@ function parseCallbackPath(ctx: TBFContext) {
   }
 }
 
-module.exports = {
+export default {
   declOfNum,
   parseCallbackPath,
   serverIP: require("./server_ip")

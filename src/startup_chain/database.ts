@@ -1,7 +1,7 @@
 import { MongoClient, Collection as MongoCollection } from 'mongodb/mongodb';
 import { MongoDataBase } from '../types';
 
-module.exports = function ({
+export default function ({
     url,
     dbName
 }) {

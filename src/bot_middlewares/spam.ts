@@ -4,7 +4,7 @@ let moment = require('moment');
 let spam_store: {
     [key: number]: number
 } = {};
-module.exports = () => {
+export default () => {
     return async function (ctx: TBFContext, next) {
         if (!ctx.update) return next();
         let message = "message" in ctx.update ? ctx.update.message : null;

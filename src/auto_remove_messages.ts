@@ -1,6 +1,6 @@
 import type { DB } from "./types";
 
-module.exports = ({ db }: { db: DB }) => {
+export default ({ db }: { db: DB }) => {
     let moment = require('moment');
 
     return setInterval(async function () {

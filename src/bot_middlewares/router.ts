@@ -3,7 +3,7 @@ import type { DB, TBFContext, Component, CallbackPath } from "../types"
 let helpers = require("../helpers");
 import dataPacker from "../data_packer";
 
-module.exports = ({ db, components }: { db: DB, components: Component[] }) => {
+export default ({ db, components }: { db: DB, components: Component[] }) => {
     return async function (_ctx: TBFContext, next: Function) {
         let ctx = _ctx;
         console.log('==============v')

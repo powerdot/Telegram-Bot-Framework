@@ -20,4 +20,4 @@ function activate({ telegram, mongo, webServer, config }: TBFArgs): Promise<Star
     });
 }
 
-module.exports = activate;
+export default activate;

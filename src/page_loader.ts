@@ -346,7 +346,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
     return { components }
 }
 
-module.exports = (
+export default (
     { db, config }: { db: DB, config: TBFConfig }
 ) => {
     let paginator: PaginatorReturn = require("./paginator")({ config });

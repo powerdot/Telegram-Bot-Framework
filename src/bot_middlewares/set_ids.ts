@@ -8,7 +8,7 @@ function getChatId(ctx: TBFContext) {
     // return "chat" in chat_data ? chat_data.chat.id : undefined;
 }
 
-module.exports = () => {
+export default () => {
     return async function (ctx: TBFContext, next: Function) {
         ctx.chatId = getChatId(ctx);
         return next();

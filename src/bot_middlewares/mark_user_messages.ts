@@ -1,6 +1,6 @@
 import type { DB, TBFContext } from "../types"
 
-module.exports = ({ db }: { db: DB }) => {
+export default ({ db }: { db: DB }) => {
     return async function (ctx: TBFContext, next: Function) {
         if (!ctx.update) return next();
         let message = "message" in ctx.update ? ctx.update.message : null;
