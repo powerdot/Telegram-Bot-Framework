@@ -1,4 +1,6 @@
+import { Telegraf } from "telegraf";
+import { TBFContext } from "../types";
 export default function ({ token, apiUrl }: {
-    token: any;
-    apiUrl: any;
-}): Promise<unknown>;
+    token: string;
+    apiUrl?: string;
+}): Promise<Telegraf<TBFContext>>;

@@ -1,6 +1,8 @@
+import { Application } from "express";
+
 export default function ({
     module,
-}, config) {
+}, config): Promise<Application> {
     // HTTP Service
     let express = require("express");
     let _address = config.webServer.address;

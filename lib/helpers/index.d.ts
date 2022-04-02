@@ -8,6 +8,5 @@ declare function parseCallbackPath(ctx: TBFContext): false | {
 declare const _default: {
     declOfNum: typeof declOfNum;
     parseCallbackPath: typeof parseCallbackPath;
-    serverIP: any;
 };
 export default _default;

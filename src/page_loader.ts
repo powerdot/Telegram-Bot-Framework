@@ -13,6 +13,7 @@ import type {
 } from "./types"
 
 import dataPacker from "./data_packer"
+import Paginator from "./paginator"
 
 type loaderArgs = {
     db: DB,
@@ -349,7 +350,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
 export default (
     { db, config }: { db: DB, config: TBFConfig }
 ) => {
-    let paginator: PaginatorReturn = require("./paginator")({ config });
+    let paginator: PaginatorReturn = Paginator({ config });
 
     let pages_components = paginator.list("pages")
     let pages = loader({ db, config, inputComponents: pages_components, componentType: 'page' }).components;

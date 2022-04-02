@@ -1,12 +1,8 @@
 require('dotenv').config()
 
-import type {
-    TBF as TelegramBotFramework,
-} from "../../src/types"
+const TBF = require("../../src");
 
-const TBF: TelegramBotFramework = require("../../src");
-
-TBF.create({
+TBF.default({
     telegram: {
         token: process.env.CAFE_TOKEN,
     },

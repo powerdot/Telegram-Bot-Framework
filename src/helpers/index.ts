@@ -45,6 +45,5 @@ function parseCallbackPath(ctx: TBFContext) {
 
 export default {
   declOfNum,
-  parseCallbackPath,
-  serverIP: require("./server_ip")
+  parseCallbackPath
 }

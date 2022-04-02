@@ -4,7 +4,7 @@ import { MongoDataBase } from '../types';
 export default function ({
     url,
     dbName
-}) {
+}): Promise<MongoDataBase> {
     return new Promise(async resolve => {
         const { MongoClient } = require('mongodb');
 

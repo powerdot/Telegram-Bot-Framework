@@ -1,3 +1,4 @@
+import { Application } from "express";
 export default function ({ module, }: {
     module: any;
-}, config: any): Promise<unknown>;
+}, config: any): Promise<Application>;

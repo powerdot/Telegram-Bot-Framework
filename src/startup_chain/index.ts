@@ -1,11 +1,10 @@
 import { MongoDataBase, Telegraf, StartupChainInstances, TBFArgs } from "../types";
+import _bot from "./bot";
+import _database from "./database";
+import _webserver from "./webserver";
 
 function activate({ telegram, mongo, webServer, config }: TBFArgs): Promise<StartupChainInstances> {
     return new Promise(async resolve => {
-        let _bot = require("./bot");
-        let _database = require("./database");
-        let _webserver = require("./webserver");
-
         try {
             let instances: StartupChainInstances = {
                 bot: await _bot(telegram),

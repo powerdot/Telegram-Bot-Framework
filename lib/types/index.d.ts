@@ -310,7 +310,7 @@ interface TBFArgs {
         apiUrl?: string;
     }
     webServer?: {
-        module?: any;
+        module: any;
     },
     mongo?: {
         url: string;
