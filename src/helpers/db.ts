@@ -128,7 +128,7 @@ export default (
     messages = message_or_arrayMessages;
     if (config.debug) console.log("[addToRemoveMessages]", messages);
     for (let message of messages) {
-      if (trash && config.debug) console.log("к обязательному удалению:", message, message.message_id, trash);
+      if (trash && config.debug) console.log("[addToRemoveMessages] Will be deleted:", message, message.message_id, trash);
       let selectedCollection = message.from.is_bot ? collection_BotMessageHistory : collection_UserMessageHistory;
       await selectedCollection.insertOne({ chatId, message, messageId: message.message_id, trash } as DatabaseMessage).catch(function (e) {
         console.error('addToRemoveMessages error', e)
@@ -138,7 +138,7 @@ export default (
 
   async function removeMessage(ctx: TBFContext, messageId: number, scope = 'bot') {
     let chatId = ctx.chatId;
-    if (config.debug) console.log("removing", chatId, messageId)
+    if (config.debug) console.log("[removeMessage] Removing", chatId, messageId)
     let selectedCollection = scope === 'bot' ? collection_BotMessageHistory : collection_UserMessageHistory;
     await selectedCollection.deleteOne({ chatId, messageId });
     try {
@@ -249,7 +249,7 @@ export default (
   async function _addUserSpecialCommand(ctx: TBFContext) {
     let chatId = ctx.chatId;
     let message = ctx.message
-    if (config.debug) console.log("_addUserSpecialCommand", chatId, message);
+    if (config.debug) console.log("[_addUserSpecialCommand]", chatId, message);
     await collection_specialCommandsHistory.insertOne({ chatId, message, messageId: message.message_id } as DatabaseMessage);
   }
 
@@ -257,7 +257,7 @@ export default (
     let chatId = ctx.chatId;
     let messages: DatabaseMessage[] = await collection_specialCommandsHistory.find<DatabaseMessage>({ chatId }).toArray();
     if (!messages) messages = [];
-    if (config.debug) console.log("_getUserSpecialCommands", messages);
+    if (config.debug) console.log("[_getUserSpecialCommands]", messages);
     return messages;
   }
 
@@ -265,7 +265,7 @@ export default (
     let chatId = ctx.chatId;
     let messages = await _getUserSpecialCommands(ctx);
     let lastMessage = messages[messages.length - 1];
-    if (config.debug) console.log("_removeSpecialCommandsExceptLastOne:", messages, lastMessage);
+    if (config.debug) console.log("[_removeSpecialCommandsExceptLastOne]:", messages, lastMessage);
     for (let message of messages) {
       if (message.messageId != lastMessage.messageId) {
         await collection_specialCommandsHistory.deleteOne({ chatId, messageId: message.messageId });

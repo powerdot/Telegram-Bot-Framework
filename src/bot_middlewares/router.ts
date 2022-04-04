@@ -39,10 +39,10 @@ export default ({ db, components, config }: { db: DB, components: Component[], c
             if (!routing.component) routing.component = parseStep.route;
             if (!routing.action) routing.action = parseStep.action;
         }
-        if (config.debug) console.log("route", routing);
-        if (config.debug) console.log("parseCallbackPath", parseCallbackPath);
-        if (config.debug) console.log("parseStep", parseStep);
-        if (config.debug) console.log("ctx", ctx);
+        if (config.debug) console.log("[router] Route", routing);
+        if (config.debug) console.log("[router] ParseCallbackPath", parseCallbackPath);
+        if (config.debug) console.log("[router] ParseStep", parseStep);
+        if (config.debug) console.log("[router] ctx", ctx);
         if (config.debug) console.log('==============');
 
         if (routing.component) {

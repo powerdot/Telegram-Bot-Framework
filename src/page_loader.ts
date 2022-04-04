@@ -83,7 +83,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                         }
                         if (button.url) {
                             url = button.url.indexOf("http") == 0 ? button.url : config.webServer.address + button.url;
-                            if (config.debug) console.log("url:", url)
+                            if (config.debug) console.log("[parseButtons] url:", url)
                         }
                     }
                     new_row.push({
@@ -94,7 +94,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                 }
                 inline_buttons.push(new_row);
             }
-            if (config.debug) console.log("inline_buttons:", inline_buttons)
+            if (config.debug) console.log("[parseButtons] inline_buttons:", inline_buttons)
             return resolve(inline_buttons);
         })
     }
@@ -183,7 +183,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     // get last bot's message and update it
                     let lastBotMessage = await db.messages.bot.getLastMessage(this.ctx);
                     if (lastBotMessage) {
-                        if (config.debug) console.log("message to update:", lastBotMessage);
+                        if (config.debug) console.log("[update] message to update:", lastBotMessage);
                         let edited;
                         try {
                             edited = await this.ctx.telegram.editMessageText(
@@ -284,12 +284,12 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
         if (!pageObject.onMessage) {
             pageObject.onMessage = async (ctx: TBFContext) => {
                 if (!ctx.routing.message) return;
-                if (config.debug) console.log("onMessage:", ctx.routing.message);
+                if (config.debug) console.log("[onMessage] Message:", ctx.routing.message);
                 let action = ctx.routing.action;
                 try {
                     let handler = pageObject.actions[action].messageHandler;
                     await db.messages.addToRemoveMessages(ctx, ctx.message, true);
-                    if (config.debug) console.log("messageHandler:", handler);
+                    if (config.debug) console.log("[onMessage] messageHandler:", handler);
                     if (handler) {
                         if (handler.clearChat) await db.messages.removeMessages(ctx);
                         let handler_fn = extractHandler(handler);
@@ -316,7 +316,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                                 await db.messages.removeMessages(ctx, true);
                             }
                         }
-                        if (config.debug) console.log("MESSAGE", ctx.message);
+                        if (config.debug) console.log("[onMessage]: Message", ctx.message);
                     } else {
                         await db.messages.removeMessages(ctx, true);
                     }
@@ -327,7 +327,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
         }
         if (!pageObject.call) {
             pageObject.call = async (ctx) => {
-                if (config.debug) console.log("call", pageObject.id, ctx.routing);
+                if (config.debug) console.log("[call]", pageObject.id, ctx.routing);
                 if (ctx.routing.type == 'callback_query') await pageObject.onCallbackQuery(ctx);
                 if (ctx.routing.type == 'message') await pageObject.onMessage(ctx);
             }
