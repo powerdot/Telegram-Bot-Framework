@@ -1,6 +1,6 @@
-import { ComponentExport } from "../../../src/types"
+import { Component } from "../../../src"
 
-let page: ComponentExport = ({ db }) => {
+module.exports = Component(({ db }) => {
     return {
         id: "index",
         actions: {
@@ -26,6 +26,4 @@ let page: ComponentExport = ({ db }) => {
             },
         }
     }
-}
-
-module.exports = page;
+});

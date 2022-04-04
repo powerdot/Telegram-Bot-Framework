@@ -2,10 +2,10 @@ import type {
     StartupChainInstances,
     DB,
     Component,
+    ComponentExport,
     TBFPromiseReturn,
     TBFArgs,
     WebServerArgs,
-    TBF,
 } from "./types";
 import StartupChain from "./startup_chain";
 import DBInstance from "./helpers/db";
@@ -18,14 +18,17 @@ import Middleware_Router from "./bot_middlewares/router";
 
 import AutoRemoveMessages from "./auto_remove_messages";
 
+let path = require("path");
+
 let Create = ({ webServer, telegram, mongo, config }: TBFArgs): Promise<TBFPromiseReturn> => {
 
+    let cwd = process.cwd();
     let default_config = {
         pages: {
-            path: "./pages",
+            path: path.resolve(cwd, "./pages"),
         },
         plugins: {
-            path: "./plugins",
+            path: path.resolve(cwd, "./plugins"),
         },
         autoRemoveMessages: true,
         debug: false,
@@ -67,16 +70,23 @@ let Create = ({ webServer, telegram, mongo, config }: TBFArgs): Promise<TBFPromi
             }
             await resolve(return_data);
 
-            if (config.autoRemoveMessages) AutoRemoveMessages({ db });
+            if (_config.autoRemoveMessages) AutoRemoveMessages({ db });
 
             // Engine router
             bot.use(Middleware_Router({ db, components }));
 
             // Starting web server
             if (app && webServer?.module)
-                app.use(webServer.module({ bot, db, config, components, database } as WebServerArgs));
+                app.use(webServer.module({ bot, db, config: _config, components, database } as WebServerArgs));
         });
     });
 };
 
-export default Create
+function ComponentInit(fn: ComponentExport) {
+    return fn;
+}
+
+export {
+    Create as TBF,
+    ComponentInit as Component
+};

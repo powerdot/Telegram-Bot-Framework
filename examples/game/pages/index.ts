@@ -1,4 +1,5 @@
-import { ComponentExport, MessageButtons, ButtonsRowButton } from "../../../src/types";
+import { MessageButtons, ButtonsRowButton } from "../../../src/types";
+import { Component } from "../../../src";
 
 const winningConditions = [
     [0, 1, 2], [3, 4, 5], [6, 7, 8], // horizontals
@@ -8,21 +9,14 @@ const winningConditions = [
 
 // Bot texts
 const botInGameText = [
-    "🤖 Oh, good choice!",
-    "🤖 Hm, you're good!",
-    "🤖 Who is going to win?",
-    "🤖 Looks like you're PRO!",
-    "🤖 You're good at this!",
-    "🤖 Damn boiiii",
-    "🤖 Look at this!",
-    "🤖 Can you beat me?",
-    "🤖 You're so good!"
+    "🤖 Oh, good choice!", "🤖 Hm, you're good!", "🤖 Who is going to win?",
+    "🤖 Looks like you're PRO!", "🤖 You're good at this!", "🤖 Damn boiiii",
+    "🤖 Look at this!", "🤖 Can you beat me?", "🤖 You're so good!"
 ];
 
 // Randomly choose bot text
-function randomBotInGameMessage() {
-    return botInGameText[Math.floor(Math.random() * botInGameText.length)];
-}
+let randomBotInGameMessage =
+    () => botInGameText[Math.floor(Math.random() * botInGameText.length)];
 
 // Restart button
 let restartGameButton: ButtonsRowButton = { text: "🔄 Restart game", action: "main" };
@@ -78,7 +72,7 @@ function checkWinner(field) {
 }
 
 // Game page
-let page: ComponentExport = ({ db, config, paginator }) => {
+module.exports = Component(() => {
     return {
         id: "index",
         actions: {
@@ -134,6 +128,4 @@ let page: ComponentExport = ({ db, config, paginator }) => {
             },
         }
     }
-}
-
-module.exports = page;
+});

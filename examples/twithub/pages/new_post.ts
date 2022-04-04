@@ -1,6 +1,6 @@
-import { ComponentExport } from "../../../src/types"
+import { Component } from "../../../src"
 
-let page: ComponentExport = ({ db, config, paginator }) => {
+module.exports = Component(() => {
     return {
         actions: {
             main: {
@@ -51,6 +51,4 @@ let page: ComponentExport = ({ db, config, paginator }) => {
             }
         }
     }
-}
-
-module.exports = page;
+});

@@ -14,7 +14,7 @@ type CallbackPath = {
     current: CallbackPathRoute,
     all: Array<CallbackPathRoute>,
     next: string | false
-}
+} | boolean
 
 interface TBFContext extends TelegrafContext {
     chatId?: number | null
@@ -313,7 +313,7 @@ interface TBFArgs {
         module: any;
     },
     mongo?: {
-        url: string;
+        url?: string;
         dbName: string;
     },
     config?: TBFConfig

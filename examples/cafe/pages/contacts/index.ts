@@ -1,9 +1,10 @@
-import { ComponentExport } from "../../../../src/types"
+import { Component } from "../../../../src"
 import backButton from '../../components/backButton';
 import calcCrow from './calcCrow';
 let { establishments, ourEstablishmentsText } = require('./establishments');
 
-let page: ComponentExport = ({ db }) => {
+
+module.exports = Component(({ db }) => {
     return {
         id: "contacts",
         actions: {
@@ -71,6 +72,4 @@ let page: ComponentExport = ({ db }) => {
             }
         }
     }
-}
-
-module.exports = page;
+});

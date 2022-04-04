@@ -1,8 +1,8 @@
 require('dotenv').config()
 
-const TBF = require("../../src");
+import { TBF } from "../../src";
 
-TBF.default({
+TBF({
     telegram: {
         token: process.env.CAFE_TOKEN,
     },

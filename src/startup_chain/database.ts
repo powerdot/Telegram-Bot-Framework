@@ -4,11 +4,11 @@ import { MongoDataBase } from '../types';
 export default function ({
     url,
     dbName
-}): Promise<MongoDataBase> {
+}: { url?: string, dbName: string }): Promise<MongoDataBase> {
     return new Promise(async resolve => {
         const { MongoClient } = require('mongodb');
 
-        let _url = url;
+        let _url = url || 'mongodb://localhost:27017';
         let _database_name = dbName;
 
         try {

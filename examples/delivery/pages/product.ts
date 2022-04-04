@@ -1,7 +1,7 @@
-import { ComponentExport } from "../../../src/types";
+import { Component } from "../../../src";
 let products = require("../assets/products");
 
-let page: ComponentExport = ({ db, config, paginator }) => {
+module.exports = Component(({ db, config, paginator }) => {
     return {
         actions: {
             async main({ data }) {
@@ -83,6 +83,4 @@ let page: ComponentExport = ({ db, config, paginator }) => {
             }
         }
     }
-}
-
-module.exports = page;
+});

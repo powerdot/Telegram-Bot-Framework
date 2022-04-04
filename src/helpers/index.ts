@@ -1,8 +1,6 @@
 import type {
-  Markup,
   TBFContext,
-  CallbackPath,
-  CallbackPathRoute
+  CallbackPath
 } from "../types"
 
 
@@ -11,9 +9,7 @@ function declOfNum(number: number, titles: string[]) {
   return titles[(number % 100 > 4 && number % 100 < 20) ? 2 : cases[(number % 10 < 5) ? number % 10 : 5]];
 }
 
-
-
-function parseCallbackPath(ctx: TBFContext) {
+function parseCallbackPath(ctx: TBFContext): CallbackPath {
   if (ctx.updateType != 'callback_query') return false;
   let callback_data = ctx?.routeTo || ("data" in ctx.callbackQuery ? ctx.callbackQuery.data : undefined);
 
@@ -43,7 +39,7 @@ function parseCallbackPath(ctx: TBFContext) {
   }
 }
 
-export default {
+export {
   declOfNum,
   parseCallbackPath
 }

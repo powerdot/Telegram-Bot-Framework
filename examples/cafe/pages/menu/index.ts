@@ -1,4 +1,4 @@
-import { ComponentExport, ButtonsRowButton } from "../../../../src/types"
+import { ButtonsRowButton } from "../../../../src/types"
 import backButton from "../../components/backButton";
 import menu from "./menu";
 
@@ -23,7 +23,8 @@ let defaultButtons = [
     backButton,
 ];
 
-let page: ComponentExport = () => {
+import { Component } from "../../../../src"
+module.exports = Component(() => {
     return {
         id: "menu",
         actions: {
@@ -66,6 +67,4 @@ let page: ComponentExport = () => {
             }
         }
     };
-}
-
-module.exports = page;
+});

@@ -1,6 +1,7 @@
-import { ComponentExport, ButtonsRow } from "../../../src/types"
+import { ButtonsRow } from "../../../src/types"
+import { Component } from "../../../src"
 
-let page: ComponentExport = ({ db, config, paginator }) => {
+module.exports = Component(({ db, config, paginator }) => {
     return {
         actions: {
             async main({ data }) {
@@ -67,6 +68,4 @@ let page: ComponentExport = ({ db, config, paginator }) => {
             }
         }
     }
-}
-
-module.exports = page;
+});

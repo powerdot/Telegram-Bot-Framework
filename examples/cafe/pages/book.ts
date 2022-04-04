@@ -1,8 +1,8 @@
-import { ComponentExport } from "../../../src/types"
+import { Component } from "../../../src"
 import backButton from "../components/backButton";
 let moment = require("moment");
 
-let page: ComponentExport = ({ db }) => {
+module.exports = Component(({ db }) => {
     return {
         id: "book",
         actions: {
@@ -143,6 +143,4 @@ let page: ComponentExport = ({ db }) => {
             }
         }
     };
-}
-
-module.exports = page;
+});

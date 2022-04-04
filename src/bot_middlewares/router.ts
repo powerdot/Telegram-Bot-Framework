@@ -1,6 +1,6 @@
 import type { DB, TBFContext, Component, CallbackPath } from "../types"
 
-let helpers = require("../helpers");
+import { parseCallbackPath as ParseCallbackPath } from "../helpers";
 import dataPacker from "../data_packer";
 
 export default ({ db, components }: { db: DB, components: Component[] }) => {
@@ -8,7 +8,7 @@ export default ({ db, components }: { db: DB, components: Component[] }) => {
         let ctx = _ctx;
         console.log('==============v')
         let step_ = await db.getValue(ctx, 'step');
-        let parseCallbackPath: CallbackPath = helpers.parseCallbackPath(ctx);
+        let parseCallbackPath: CallbackPath = ParseCallbackPath(ctx);
         let parseStep: any = false;
         if (step_) {
             parseStep = {
@@ -30,7 +30,7 @@ export default ({ db, components }: { db: DB, components: Component[] }) => {
             routing.message = "message" in ctx.update ? ctx.update.message : undefined;
             routing.isMessageFromUser = true;
         }
-        if (parseCallbackPath) {
+        if (typeof parseCallbackPath == 'object') {
             routing.component = parseCallbackPath.current.route;
             routing.action = parseCallbackPath.current.action;
             routing.data = await dataPacker.unpackData(parseCallbackPath.current.data, db, ctx);
@@ -40,7 +40,7 @@ export default ({ db, components }: { db: DB, components: Component[] }) => {
             if (!routing.action) routing.action = parseStep.action;
         }
         console.log("route", routing);
-        console.log("parseCallbackPath", parseCallbackPath.current);
+        console.log("parseCallbackPath", parseCallbackPath);
         console.log("parseStep", parseStep);
         console.log("ctx", ctx);
         console.log('==============');

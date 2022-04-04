@@ -1,4 +1,3 @@
-import { ComponentExport } from "../../../src/types";
 let products = require("../assets/products");
 
 let MiniSearch = require("../assets/minisearch.min.js");
@@ -26,7 +25,8 @@ async function makeMenuButtos(_this) {
     ];
 }
 
-let page: ComponentExport = ({ db, config, paginator }) => {
+import { Component } from "../../../src";
+module.exports = Component(() => {
     return {
         actions: {
             main: {
@@ -90,6 +90,4 @@ let page: ComponentExport = ({ db, config, paginator }) => {
             }
         }
     }
-}
-
-module.exports = page;
+});

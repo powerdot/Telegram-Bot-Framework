@@ -1,4 +1,4 @@
-import { ComponentExport, ComponentActionHandlerThisUpdateArg, PluginButton } from "../../../src/types"
+import { ComponentActionHandlerThisUpdateArg, PluginButton } from "../../../src/types"
 import backButton from "../components/backButton";
 
 function GoToGallery(name: string, place: string): PluginButton {
@@ -27,7 +27,8 @@ let message: ComponentActionHandlerThisUpdateArg = {
     ]
 };
 
-let page: ComponentExport = () => {
+import { Component } from "../../../src";
+module.exports = Component(() => {
     return {
         id: "gallery",
         actions: {
@@ -39,6 +40,4 @@ let page: ComponentExport = () => {
             }
         }
     };
-}
-
-module.exports = page;
+});

@@ -1,7 +1,7 @@
-import { ComponentExport } from "../../../src/types"
+import { Component } from "../../../src"
 import backButton from "../components/backButton";
 
-let page: ComponentExport = () => {
+module.exports = Component(() => {
     return {
         id: "time_selector",
         actions: {
@@ -36,6 +36,4 @@ let page: ComponentExport = () => {
             }
         }
     };
-}
-
-module.exports = page;
+});

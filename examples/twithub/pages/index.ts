@@ -1,7 +1,6 @@
-import { ComponentExport } from "../../../src/types"
-let moment = require("moment");
+import { Component } from "../../../src"
 
-let page: ComponentExport = ({ db, config }) => {
+module.exports = Component(() => {
     return {
         actions: {
             async main() {
@@ -21,6 +20,4 @@ let page: ComponentExport = ({ db, config }) => {
             }
         }
     }
-}
-
-module.exports = page;
+});

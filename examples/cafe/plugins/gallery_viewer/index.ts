@@ -1,4 +1,4 @@
-import { ComponentExport, ButtonsRowButton } from "../../../../src/types"
+import { ButtonsRowButton } from "../../../../src/types"
 import photos from "./photos";
 
 type localActionData = {
@@ -8,7 +8,8 @@ type localActionData = {
     move?: string
 }
 
-let page: ComponentExport = ({ db, parseButtons }) => {
+import { Component } from "../../../../src";
+module.exports = Component(({ db, parseButtons }) => {
 
     function buildExitButton({ callback, params }): ButtonsRowButton {
         return { text: params.backButton || "◀️ Back", action: 'exit', data: { callback, params } };
@@ -118,6 +119,4 @@ let page: ComponentExport = ({ db, parseButtons }) => {
             }
         }
     };
-}
-
-module.exports = page;
+})
