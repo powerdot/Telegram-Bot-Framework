@@ -10,7 +10,7 @@ export default function ({
 
         let _token = token;
         if (!_token) {
-            console.log('📛', 'Set token');
+            console.error('📛', 'Set token');
             process.exit();
         } else {
             console.log("ℹ️ ", "Telegram token is set.");

@@ -12,7 +12,7 @@ export default () => {
         let user_id = message.from.id;
         if (!spam_store[user_id]) spam_store[user_id] = moment().unix() - 10;
         if (spam_store[user_id] == moment().unix()) {
-            console.log('📛 SPAM:', user_id, 'is sending messages too fast');
+            console.warn('📛 SPAM:', user_id, 'is sending messages too fast');
             return false;
         }
         spam_store[user_id] = moment().unix();

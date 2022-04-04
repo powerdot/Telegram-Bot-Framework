@@ -1,4 +1,13 @@
-import { TBFContext, TelegramMessage, DB, tt, DatabaseMessage, MongoDataBase, Telegraf } from "../types"
+import {
+  TBFContext,
+  TelegramMessage,
+  DB,
+  tt,
+  DatabaseMessage,
+  MongoDataBase,
+  Telegraf,
+  TBFConfig
+} from "../types"
 
 let moment = require("moment");
 let ObjectID = require('mongodb').ObjectID;
@@ -14,40 +23,40 @@ export default (
     collection_specialCommandsHistory,
     collection_UserDataCollection,
     collection_TempData,
-  }: MongoDataBase): DB => {
+  }: MongoDataBase, config: TBFConfig): DB => {
 
   async function getValue(ctx: TBFContext, key: string) {
     let data = await collection_UserData.findOne({ chatId: ctx.chatId, name: key });
     data = data ? data.value : undefined;
-    console.log("[GET value]", key, '->', data);
+    if (config.debug) console.log("[GET value]", key, '->', data);
     return data;
   }
 
   async function setValue(ctx: TBFContext, key: string, value: any) {
-    console.log("[SET value]", key, "=", value)
+    if (config.debug) console.log("[SET value]", key, "=", value)
     return await collection_UserData.updateOne({ name: key, chatId: ctx.chatId }, { $set: { name: key, chatId: ctx.chatId, value } }, { upsert: true });
   }
 
   async function removeValue(ctx: TBFContext, key: string) {
-    console.log("[REMOVE value]", key);
+    if (config.debug) console.log("[REMOVE value]", key);
     return await collection_UserData.deleteOne({ name: key, chatId: ctx.chatId });
   }
 
   async function TempDataAdd(chatId: number, messagespase: string, uniqid: string, data: any) {
     await collection_TempData.updateOne({ messagespase, uniqid, chatId }, { $set: { messagespase, uniqid, data, chatId } }, { upsert: true });
-    console.log("[ADD TempData]", messagespase, uniqid, data);
+    if (config.debug) console.log("[ADD TempData]", messagespase, uniqid, data);
     return;
   }
 
   async function TempDataGet(messagespase: string, uniqid: string) {
     let data = await collection_TempData.findOne({ messagespase, uniqid });
     data = data ? data.data : undefined;
-    console.log("[GET TempData]", messagespase, uniqid, '->', data);
+    if (config.debug) console.log("[GET TempData]", messagespase, uniqid, '->', data);
     return data;
   }
 
   async function TempDataRemove(messagespase: string) {
-    console.log("[REMOVE TempData]", messagespase);
+    if (config.debug) console.log("[REMOVE TempData]", messagespase);
     await collection_TempData.deleteMany({ messagespase });
     return;
   }
@@ -91,8 +100,7 @@ export default (
     let query = { chatId };
     let queryTrash = { chatId, trash: onlyTrash };
     let currentBotMessagesToRemove: (DatabaseMessage)[] = await (await collection_BotMessageHistory.find<DatabaseMessage>(onlyTrash ? queryTrash : query)).toArray();
-    console.log("[removeBotMessages]", currentBotMessagesToRemove.length, "messages to remove");
-    // console.log("currentMessagesToRemove:", currentMessagesToRemove);
+    if (config.debug) console.log("[removeBotMessages]", currentBotMessagesToRemove.length, "messages to remove");
     if (currentBotMessagesToRemove.length != 0) {
       for (let currentMessageToRemove of currentBotMessagesToRemove) {
         let messageId = currentMessageToRemove?.messageId;
@@ -101,7 +109,7 @@ export default (
       }
     }
     let currentUserMessagesToRemove: DatabaseMessage[] = await (await collection_UserMessageHistory.find<DatabaseMessage>(onlyTrash ? queryTrash : query)).toArray();
-    console.log("[removeUserMessages]", currentUserMessagesToRemove.length, "messages to remove");
+    if (config.debug) console.log("[removeUserMessages]", currentUserMessagesToRemove.length, "messages to remove");
     if (currentUserMessagesToRemove.length != 0) {
       for (let currentMessageToRemove of currentUserMessagesToRemove) {
         let messageId = currentMessageToRemove.messageId;
@@ -118,9 +126,9 @@ export default (
     let messages: TelegramMessage[] = [];
     if (!Array.isArray(message_or_arrayMessages)) message_or_arrayMessages = [message_or_arrayMessages];
     messages = message_or_arrayMessages;
-    console.log("[addToRemoveMessages]", messages);
+    if (config.debug) console.log("[addToRemoveMessages]", messages);
     for (let message of messages) {
-      if (trash) console.log("к обязательному удалению:", message, message.message_id, trash);
+      if (trash && config.debug) console.log("к обязательному удалению:", message, message.message_id, trash);
       let selectedCollection = message.from.is_bot ? collection_BotMessageHistory : collection_UserMessageHistory;
       await selectedCollection.insertOne({ chatId, message, messageId: message.message_id, trash } as DatabaseMessage).catch(function (e) {
         console.error('addToRemoveMessages error', e)
@@ -130,7 +138,7 @@ export default (
 
   async function removeMessage(ctx: TBFContext, messageId: number, scope = 'bot') {
     let chatId = ctx.chatId;
-    console.log("removing", chatId, messageId)
+    if (config.debug) console.log("removing", chatId, messageId)
     let selectedCollection = scope === 'bot' ? collection_BotMessageHistory : collection_UserMessageHistory;
     await selectedCollection.deleteOne({ chatId, messageId });
     try {
@@ -205,7 +213,6 @@ export default (
   }
 
   async function _DataUpdate(_id: string, data: any) {
-    // console.log("_DataUpdate:",_id, data);
     let result = await collection_Data.updateOne({ _id: new ObjectID(_id) }, { $set: data }, { upsert: true });
     return result;
   }
@@ -242,7 +249,7 @@ export default (
   async function _addUserSpecialCommand(ctx: TBFContext) {
     let chatId = ctx.chatId;
     let message = ctx.message
-    console.log("_addUserSpecialCommand", chatId, message);
+    if (config.debug) console.log("_addUserSpecialCommand", chatId, message);
     await collection_specialCommandsHistory.insertOne({ chatId, message, messageId: message.message_id } as DatabaseMessage);
   }
 
@@ -250,7 +257,7 @@ export default (
     let chatId = ctx.chatId;
     let messages: DatabaseMessage[] = await collection_specialCommandsHistory.find<DatabaseMessage>({ chatId }).toArray();
     if (!messages) messages = [];
-    console.log("_getUserSpecialCommands", messages);
+    if (config.debug) console.log("_getUserSpecialCommands", messages);
     return messages;
   }
 
@@ -258,7 +265,7 @@ export default (
     let chatId = ctx.chatId;
     let messages = await _getUserSpecialCommands(ctx);
     let lastMessage = messages[messages.length - 1];
-    console.log("_removeSpecialCommandsExceptLastOne:", messages, lastMessage);
+    if (config.debug) console.log("_removeSpecialCommandsExceptLastOne:", messages, lastMessage);
     for (let message of messages) {
       if (message.messageId != lastMessage.messageId) {
         await collection_specialCommandsHistory.deleteOne({ chatId, messageId: message.messageId });

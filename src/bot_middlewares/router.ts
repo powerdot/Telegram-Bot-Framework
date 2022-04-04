@@ -1,12 +1,12 @@
-import type { DB, TBFContext, Component, CallbackPath } from "../types"
+import type { DB, TBFContext, Component, CallbackPath, TBFConfig } from "../types"
 
 import { parseCallbackPath as ParseCallbackPath } from "../helpers";
 import dataPacker from "../data_packer";
 
-export default ({ db, components }: { db: DB, components: Component[] }) => {
+export default ({ db, components, config }: { db: DB, components: Component[], config: TBFConfig }) => {
     return async function (_ctx: TBFContext, next: Function) {
         let ctx = _ctx;
-        console.log('==============v')
+        if (config.debug) console.log('==============v')
         let step_ = await db.getValue(ctx, 'step');
         let parseCallbackPath: CallbackPath = ParseCallbackPath(ctx);
         let parseStep: any = false;
@@ -39,18 +39,18 @@ export default ({ db, components }: { db: DB, components: Component[] }) => {
             if (!routing.component) routing.component = parseStep.route;
             if (!routing.action) routing.action = parseStep.action;
         }
-        console.log("route", routing);
-        console.log("parseCallbackPath", parseCallbackPath);
-        console.log("parseStep", parseStep);
-        console.log("ctx", ctx);
-        console.log('==============');
+        if (config.debug) console.log("route", routing);
+        if (config.debug) console.log("parseCallbackPath", parseCallbackPath);
+        if (config.debug) console.log("parseStep", parseStep);
+        if (config.debug) console.log("ctx", ctx);
+        if (config.debug) console.log('==============');
 
         if (routing.component) {
             let component = components.find(p => p.id == routing.component);
             if (component) {
                 component?.call?.(ctx)
             } else {
-                console.log(`💔 Component with ID ${routing.component} not found.`);
+                console.error(`💔 Component with ID ${routing.component} not found.`);
             }
         }
         return next();

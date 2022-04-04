@@ -44,7 +44,7 @@ let Create = ({ webServer, telegram, mongo, config }: TBFArgs): Promise<TBFPromi
 
     return new Promise(async (resolve, reject) => {
         StartupChain({ webServer, telegram, mongo, config: _config } as TBFArgs).then(async ({ bot, app, database }: StartupChainInstances) => {
-            let db: DB = DBInstance(bot, database);
+            let db: DB = DBInstance(bot, database, _config);
             let { pages, plugins }: { pages: Component[], plugins: Component[] } = PageLoader({ db, config: _config });
             let components = [...pages, ...plugins];
 
@@ -73,7 +73,7 @@ let Create = ({ webServer, telegram, mongo, config }: TBFArgs): Promise<TBFPromi
             if (_config.autoRemoveMessages) AutoRemoveMessages({ db });
 
             // Engine router
-            bot.use(Middleware_Router({ db, components }));
+            bot.use(Middleware_Router({ db, components, config: _config }));
 
             // Starting web server
             if (app && webServer?.module)

@@ -8,8 +8,6 @@ export default ({ db }: { db: DB }) => {
         let text = "text" in message ? message.text : null;
         if (text) {
             if (["/start", "/reset"].includes(text)) {
-                console.log('-4.1')
-                console.log("skipping special command", text);
                 await db.messages.user.addUserSpecialCommand(ctx);
                 return next();
             }

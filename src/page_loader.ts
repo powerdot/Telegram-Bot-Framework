@@ -46,7 +46,6 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                 let messagespace = (ctx.callbackQuery?.message?.message_id || ctx.message?.message_id).toString();
                 let uniqid = Math.floor(Math.random() * 99999).toString();
                 let tempdata_identifier = 'X' + messagespace + "." + uniqid;
-                console.log("tempdata_identifier", tempdata_identifier)
                 await db.tempData.add(ctx.chatId, messagespace, uniqid, data)
                 compiled = `${id}�${action}�${tempdata_identifier}`;
 
@@ -84,7 +83,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                         }
                         if (button.url) {
                             url = button.url.indexOf("http") == 0 ? button.url : config.webServer.address + button.url;
-                            console.log("url:", url)
+                            if (config.debug) console.log("url:", url)
                         }
                     }
                     new_row.push({
@@ -95,7 +94,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                 }
                 inline_buttons.push(new_row);
             }
-            console.log("inline_buttons:", inline_buttons)
+            if (config.debug) console.log("inline_buttons:", inline_buttons)
             return resolve(inline_buttons);
         })
     }
@@ -119,7 +118,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
             })
             if (!pageObject.id) pageObject.id = page.id;
         } catch (error) {
-            console.log('📛', "Component loading error:", page.path, error);
+            console.error('📛', "Component loading error:", page.path, error);
             continue;
         }
         if (loadedComponents.find(x => x.id == pageObject.id)) {
@@ -184,7 +183,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     // get last bot's message and update it
                     let lastBotMessage = await db.messages.bot.getLastMessage(this.ctx);
                     if (lastBotMessage) {
-                        console.log("message to update:", lastBotMessage);
+                        if (config.debug) console.log("message to update:", lastBotMessage);
                         let edited;
                         try {
                             edited = await this.ctx.telegram.editMessageText(
@@ -195,7 +194,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                                 { ...options, parse_mode: 'HTML' }
                             );
                         } catch (e) {
-                            console.log("⚠️", "Warning:", e);
+                            console.warn("⚠️", "Warning:", e);
                         }
                         await db.messages.removeMessages(this.ctx, true);
                         return edited;
@@ -229,7 +228,6 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
             async goToAction(this: ComponentActionHandlerThis, { action, data }) {
                 let _this: ComponentActionHandlerThis = this;
                 let current_page = loadedComponents.find(x => x.id == _this.id);
-                // console.log("current_page:", components, current_page, _this);
                 let page_action = current_page.actions[action];
                 if (page_action) {
                     await db.setValue(_this.ctx, "step", _this.id + "�" + action);
@@ -286,12 +284,12 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
         if (!pageObject.onMessage) {
             pageObject.onMessage = async (ctx: TBFContext) => {
                 if (!ctx.routing.message) return;
-                console.log("onMessage:", ctx.routing.message);
+                if (config.debug) console.log("onMessage:", ctx.routing.message);
                 let action = ctx.routing.action;
                 try {
                     let handler = pageObject.actions[action].messageHandler;
                     await db.messages.addToRemoveMessages(ctx, ctx.message, true);
-                    console.log("messageHandler:", handler);
+                    if (config.debug) console.log("messageHandler:", handler);
                     if (handler) {
                         if (handler.clearChat) await db.messages.removeMessages(ctx);
                         let handler_fn = extractHandler(handler);
@@ -318,7 +316,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                                 await db.messages.removeMessages(ctx, true);
                             }
                         }
-                        console.log("MESSAGE", ctx.message);
+                        if (config.debug) console.log("MESSAGE", ctx.message);
                     } else {
                         await db.messages.removeMessages(ctx, true);
                     }
@@ -329,7 +327,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
         }
         if (!pageObject.call) {
             pageObject.call = async (ctx) => {
-                console.log("call", pageObject.id, ctx.routing);
+                if (config.debug) console.log("call", pageObject.id, ctx.routing);
                 if (ctx.routing.type == 'callback_query') await pageObject.onCallbackQuery(ctx);
                 if (ctx.routing.type == 'message') await pageObject.onMessage(ctx);
             }

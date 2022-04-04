@@ -45,7 +45,6 @@ async function unpackData(raw_data: string, db: DB, ctx: TBFContext) {
                 unpackedData = JSON.parse(cleared);
                 break;
             case "X":
-                console.log("X:", cleared, raw_data);
                 let route = cleared.split(".");
                 let messagespace = route[0];
                 let uniqid = route[1];
