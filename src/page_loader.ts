@@ -335,10 +335,11 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
             }
         }
         if (!pageObject.onOpen) pageObject.onOpen = async () => { }
-        if (!pageObject.open) pageObject.open = async function (ctx: TBFContext) {
-            let action_fn = extractHandler(pageObject.actions.main);
+        if (!pageObject.open) pageObject.open = async function ({ ctx, data, action }: { ctx: TBFContext, data: any, action: string }) {
+            let act = action || 'main';
+            let action_fn = extractHandler(pageObject.actions[act]);
             await db.messages.removeMessages(ctx);
-            await action_fn.bind({ ...binding, ctx })({ ctx });
+            await action_fn.bind({ ...binding, ctx })({ ctx, data });
             await db.setValue(ctx, "step", pageObject.id + "�main");
         }
         components.push({ ...pageObject, type: componentType });

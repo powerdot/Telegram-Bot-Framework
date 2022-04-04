@@ -26,7 +26,7 @@ TBF({
         await db.messages.removeMessages(ctx);
         await db.messages.user.removeSpecialCommandsExceptLastOne(ctx);
         // await db.user.data.destroy(ctx);
-        await openPage({ ctx, pageId: "index" });
+        await openPage({ ctx, page: "index" });
     });
 
 });

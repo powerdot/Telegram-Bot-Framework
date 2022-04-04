@@ -159,7 +159,7 @@ interface Component {
     ctx?: TBFContext
     call?: (ctx: TBFContext) => Promise<any>
     onOpen?: (ctx: TBFContext) => Promise<any>,
-    open?: (ctx: TBFContext) => Promise<any>,
+    open?: (arg: { ctx: TBFContext, data: goToData, action: string }) => Promise<any>,
 }
 
 type ParseButtonsArg = {
@@ -286,7 +286,7 @@ interface TBFPromiseReturn {
     db: DB;
     pages: Component[],
     plugins: Component[],
-    openPage: (arg: { ctx: TBFContext, pageId: string }) => Promise<Error | boolean>;
+    openPage: (arg: { ctx: TBFContext, page: string, data?: any, action?: string }) => Promise<Error | boolean>;
 }
 
 interface TBFConfig {
