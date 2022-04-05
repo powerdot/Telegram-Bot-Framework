@@ -44,6 +44,8 @@ import { TBF } from "telegram-bot-framework"
 
 Create **enter point** for your bot:
 ```js
+// index.js / index.ts
+
 TBF({
     telegram: {
         token: "xxx", // provide your token
