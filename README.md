@@ -112,7 +112,7 @@ That's all.
 
 ### TBF data flow scheme
 Checkout the scheme below:
-<img src="https://github.com/powerdot/Telegram-Bot-Framework/blob/master/assets/tbf-data-scheme.png?v2" width="100%">
+<img src="https://github.com/powerdot/Telegram-Bot-Framework/blob/master/assets/tbf-data-scheme.png?v3" width="100%">
 Main idea of this scheme is to display that Express and Pages/Plugins are connected by MongoDB database.  
 And also you can send user's data with API as in [this example](https://github.com/powerdot/Telegram-Bot-Framework/tree/master/examples/twithub).  
 By the way, you can see there is two types of routing: 
