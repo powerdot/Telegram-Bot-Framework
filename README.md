@@ -110,6 +110,9 @@ Ok, now we have a page with ID **index** and one action named **main**.
 
 That's all.
 
+### TBF data flow scheme
+<img src="https://github.com/powerdot/Telegram-Bot-Framework/blob/master/assets/tbf-data-scheme.png" width="100%">
+
 ### Let's start!
 
 Run your bot (`node index.js`) and send **/start** command to it.  
