@@ -3,7 +3,7 @@
 # TBF • Telegram Bot Framework
 Node.js framework based on [Telegraf](https://github.com/telegraf/telegraf) to facilitate writing multi-level and multi-page bots.
 
-[✈️ Examples are availiable here](https://github.com/powerdot/Telegram-Bot-Framework/examples/)
+[✈️ Examples are availiable here](https://github.com/powerdot/Telegram-Bot-Framework/tree/master/examples)
 
 ## Features
 * Component-like developing (pages/plugins)
