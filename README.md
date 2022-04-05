@@ -70,7 +70,7 @@ So next step is create **index** page (check *First meeting* section below).
 
 Here we will get acquainted with the concept of pages in the telegram bot.
 
-#### Page
+### Page
 
 1. Create **'pages' folder** in your project
 2. Create **'index.js'** file in **'pages'** folder
@@ -106,7 +106,7 @@ Ok, now we have a page with ID **index** and one action named **main**.
 
 That's all.
 
-#### Let's start!
+### Let's start!
 
 Run your bot (`node index.js`) and send **/start** command to it.  
 
