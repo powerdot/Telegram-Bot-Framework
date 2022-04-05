@@ -1,7 +1,8 @@
 <img src="https://github.com/powerdot/Telegram-Bot-Framework/blob/master/assets/head1-crop-trans.png?raw=true" width=400/>
 
 # TBF • Telegram Bot Framework
-[![Project Status: Concept – Minimal or no implementation has been done yet, or the repository is only intended to be a limited example, demo, or proof-of-concept.](https://www.repostatus.org/badges/latest/concept.svg)](https://www.repostatus.org/#concept)
+[![Project Status: Concept – Minimal or no implementation has been done yet, or the repository is only intended to be a limited example, demo, or proof-of-concept.](https://www.repostatus.org/badges/latest/concept.svg)](https://www.repostatus.org/#concept)  
+
 Node.js framework based on [Telegraf](https://github.com/telegraf/telegraf) to facilitate writing multi-level and multi-page bots.
 
 [✈️ Examples are availiable here](https://github.com/powerdot/Telegram-Bot-Framework/tree/master/examples)
