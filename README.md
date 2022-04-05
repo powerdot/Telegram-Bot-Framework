@@ -28,7 +28,7 @@ or
 yarn add telegram-bot-framework
 ```
 
-#### Add to your project
+### Add to your project
 
 For JS project:
 ```js
@@ -161,4 +161,6 @@ You have successfully created your bot with TBF.
 
 ## Plugins
 
+<hr/>
 
+By [@powerdot](https://github.com/powerdot)
