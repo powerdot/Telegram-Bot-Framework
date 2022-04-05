@@ -7,7 +7,6 @@ TBF({
         token: process.env.DELIVERY_TOKEN,
     },
     mongo: {
-        url: process.env.MONGO_URL,
         dbName: 'delivery_example'
     },
     config: {

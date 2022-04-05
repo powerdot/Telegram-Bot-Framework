@@ -10,7 +10,6 @@ TBF({
         token: process.env.TWITHUB_TOKEN,
     },
     mongo: {
-        url: process.env.MONGO_URL,
         dbName: "twithub_example"
     },
     config: {

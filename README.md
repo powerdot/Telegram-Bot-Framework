@@ -165,6 +165,9 @@ You have successfully created your bot with TBF.
 
 ## Plugins
 
+
+## Template
+
 <hr/>
 
 By [@powerdot](https://github.com/powerdot)

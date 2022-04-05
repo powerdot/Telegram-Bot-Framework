@@ -7,7 +7,6 @@ TBF({
         token: process.env.CAFE_TOKEN,
     },
     mongo: {
-        url: process.env.MONGO_URL,
         dbName: 'test_cafe_database'
     },
     config: {

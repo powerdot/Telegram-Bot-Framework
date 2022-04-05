@@ -7,7 +7,6 @@ TBF({
         token: process.env.GAME_TOKEN,
     },
     mongo: {
-        url: process.env.MONGO_URL,
         dbName: "example_game"
     },
     config: {
