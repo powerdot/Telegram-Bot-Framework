@@ -102,11 +102,11 @@ Ok, now we have a page with ID **index** and one action named **main**.
 
 🤔 But how it works?
 
-* (1) - we create component with **Component** function. And exported it to **module.exports**.
-* (2) - Component function must to return object of our component.
-* (3) - we define action named **main** in **actions** key. It's a default action for every component.
-* (4) - we call **clearChat** method to clear chat.
-* (5) - we send message with **send** method.
+* `(1)` - We create component with **Component** function. And exported it to **module.exports**.
+* `(2)` - Component function must to return object of our component.
+* `(3)` - We define action named **main** in **actions** key. It's a default action for every component.
+* `(4)` - We call **clearChat** method to clear chat.
+* `(5)` - We send message with **send** method.
 
 That's all.
 
@@ -114,19 +114,19 @@ That's all.
 Checkout the scheme below:
 <img src="https://github.com/powerdot/Telegram-Bot-Framework/blob/master/assets/tbf-data-scheme.png?v3" width="100%">
 Main idea of this scheme is to display that Express and Pages/Plugins are connected by MongoDB database.  
-And also you can send user's data with API as in [this example](https://github.com/powerdot/Telegram-Bot-Framework/tree/master/examples/twithub).  
-By the way, you can see there is two types of routing: 
-* TBF routing (for Bot).  
-You can't change routing rules without forking this project. TBF takes care of it by default.
-* and Express routing (for Web).  
-You can change routing rules on yourself in webserver/index.js file.
+And also you can send user's data with API as in [this example](https://github.com/powerdot/Telegram-Bot-Framework/tree/master/examples/twithub). And of course your API can interact with TBF Engine (send messages to users, etc.). through connection with TBF entry point.  
+By the way, you can see there is two routings: 
+* TBF routing (TBF Engine, for Bot)  
+*You can't change routing rules without forking this project. TBF takes care of it by default.*
+* Express routing (Express, for Web)  
+*You can change routing rules on yourself in `webserver/index.js` file.*
 
 ### Let's start!
 
-Run your bot (`node index.js`) and send **/start** command to it.  
+Run your bot (`node index.js`) and send `/start` command to it.  
 
 👀 Let's see what happens.
-1. Your bot waiting for **/start** command.
+1. Your bot waiting for `/start` command.
 ```js
 // index.js
 
@@ -134,16 +134,16 @@ bot.command("start", async (ctx) => {
     await openPage({ ctx, page: "index" })
 })
 ```
-2. When you send **/start** command, your bot will open page with ID **index** by **openPage*** function. 
-**openPage function provided by TBF*.
-3. TBF automatically adds default action name to openPage arguments if you don't provide it:
+2. When you send `/start` command, your bot will open page with ID **index** by **openPage*** function. 
+**`openPage()` function provided by TBF Engine*.
+3. TBF automatically adds default action name to `openPage({})` arguments if you don't provide it:
 ```js
 // from
 await openPage({ ctx, page: "index" })
 // to
 await openPage({ ctx, page: "index", action: "main" })
 ```
-*So that's why we need to add **main** to our **actions** in component. It's just a default action.*  
+*So that's why we need to add **main** to our **actions** in component. It's just a default action.*
 4. TBF triggers **main** action in **index** page.
 ```js
 // pages/index.js
@@ -160,8 +160,8 @@ module.exports = Component(() => {
 
 ...
 async main() {
-    await this.clearChat(); // built-in method to clear chat
-    this.send({ // built-in method to send message
+    await this.clearChat(); // TBF Engine's method to clear chat with user
+    this.send({ // TBF Engine's method to send message back to user
         text: `Hey!` 
     });
 }
