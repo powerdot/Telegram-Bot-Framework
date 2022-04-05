@@ -5,6 +5,8 @@ Node.js framework based on [Telegraf](https://github.com/telegraf/telegraf) to f
 
 [✈️ Examples are availiable here](https://github.com/powerdot/Telegram-Bot-Framework/tree/master/examples)
 
+<img src="https://github.com/powerdot/Telegram-Bot-Framework/blob/master/assets/structure_example.jpg?raw=true" width="100%"/>
+
 ## Features
 * Component-like developing (pages/plugins)
 * Built-in MongoDB support (to collect user's data: routing, sessions, etc.)
