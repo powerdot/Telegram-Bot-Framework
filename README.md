@@ -172,7 +172,7 @@ async main() {
 You have successfully created your bot with TBF.  
 👉 Check out [examples](https://github.com/powerdot/Telegram-Bot-Framework/tree/master/examples) here is code and demos!
 
-## API
+## TBF API
 
 
 
