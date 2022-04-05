@@ -93,7 +93,7 @@ module.exports = Component(() => { // (1)
 })
 ```
 
-Ok, now we have a page with ID **index** and one action named **main**.
+Ok, now we have a page with ID **index** and one action named **main**.  
 **Page ID is file name without extension.*  
 
 🤔 But how it works?
@@ -128,7 +128,7 @@ await openPage({ ctx, page: "index" })
 // to
 await openPage({ ctx, page: "index", action: "main" })
 ```
-*So that's why we need to add **main** to our **actions** in component. It's just a default action.*
+*So that's why we need to add **main** to our **actions** in component. It's just a default action.*  
 4. TBF triggers **main** action in **index** page.
 ```js
 // pages/index.js
@@ -153,8 +153,8 @@ async main() {
 ...
 ```
 
-🎉 Congratulations!  
-You have successfully created your bot with TBF.
+🎉 Congratulations!   
+You have successfully created your bot with TBF.  
 👉 Check out [examples](https://github.com/powerdot/Telegram-Bot-Framework/tree/master/examples) here is code and demos!
 
 ## API
