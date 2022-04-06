@@ -347,8 +347,8 @@ TBF wraps Express and runs it on own.
 But TBF requires files in `/webserver/` directory with your logic and also shares `bot`, `db`, `database`, `conponents` with your executive files.
 
 * `bot` - is Telegraf `bot` object
-* `db` - TBF MongoDB collections
-* `database` - MongoDB database
+* `db` - MongoDB instance
+* `database` - TBF MongoDB database collections
 * `components` - list of loaded pages and plugins
 
 There is couple examples of your webserver in TS:
