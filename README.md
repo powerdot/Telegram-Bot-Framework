@@ -206,8 +206,7 @@ If you don't want to change core logic of your Page/Plugin, you can work only wi
   
 Easiest way to create component is to use **Component** function.  
 ```js
-let { Component } = require("/Users/powerdot/dev/Telegram-Bot-Framework");
-
+let { Component } = require("telegram-bot-framework");
 module.exports = Component(() => {
     return {
         actions: {
@@ -219,10 +218,16 @@ module.exports = Component(() => {
 })
 ```
 
-### Component provides 
+### TBF provides to component 
 * `db` TBF database object
 * `config` App's configuration
 * `parseButtons` Function that parses TBF Buttons/Keyboard to Telegraf format.
+```js
+let { Component } = require("telegram-bot-framework");
+module.exports = Component(({db, config, parseButtons}) => {
+                             ^   ^       ^
+```
+You can use them inside functions declared in Component or in actions.
 
 ### Component's action methods  
 Routing  
@@ -258,8 +263,70 @@ Datastore
 * `this.ctx` TBF context with Telegraf context. *There is available all Telegraf/Telegram methods and data keys.*
 * `this.type` type of component: `page`/`plugin`
 
-## Express module
+Also TBF provides data to action.
+```js
+actions: {
+    async main({data}) {
+                ^
+```
 
+### Action's handlers
+
+There are 2 types of handers for `callback` and `message`.  
+Callback handler can be defined in two ways.  
+**1. As default**
+```js
+actions: {
+    async main() {
+        // there is callback handler
+    },
+}
+```
+**1.1. Strict described - as method of action**
+```js
+actions: {
+    main: {
+        async handler() {
+            // there is callback handler
+        },
+    }
+}
+```
+Message handler can be defined only strict - as method of action  
+```js
+actions: {
+    main: {
+        async messageHandler() {
+            // there is message handler
+        },
+    }
+}
+```
+
+TBF provides to message handler:
+* `text`, `photo`, `video`, `animation`, `document`, `voice`, `audio`, `poll`, `sticker`, `location`, `contact`, `venue`, `game`, `invoice`, `dice`
+```js
+actions: {
+    main: {
+        async messageHandler({text, location}) {
+                              ^     ^
+```
+
+For example, if you want catch only text message from user:
+```js
+actions: {
+    main: {
+        async messageHandler({text}) {
+            if(!text) return false;
+            // do something with text...
+```
+Oh! What is `false` in return?!  
+`return false` says to TBF to remove user's message. Without `false` in return his message stay in chat until chat clearing.
+
+
+## Express module
+TBF wraps Express and runs it on own.  
+But it using files in `/webserver/` directory with your logic and also shares `config` and `database` with your executive files.
 
 
 ## Template
