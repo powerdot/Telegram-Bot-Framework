@@ -339,13 +339,56 @@ main: {
     },
 }
 ```
-2. When user sends message (text in our case) to bot it will handled by current page (`index`) and current action (`main`) in `messageHandler`.
+2. When user sends message (text in our case) to bot it will handled by current page (`index`) and current action (`main`) by `messageHandler`.
 3. We are updating (2) last bot's message (1) with handled text. User message will be automatically removed by TBF
 
 ## Express module
 TBF wraps Express and runs it on own.  
-But TBF requires files in `/webserver/` directory with your logic and also shares `config` and `database` with your executive files.
+But TBF requires files in `/webserver/` directory with your logic and also shares `bot`, `db`, `database`, `conponents` with your executive files.
 
+* `bot` - is Telegraf `bot` object
+* `db` - TBF MongoDB collections
+* `database` - MongoDB database
+* `components` - list of loaded pages and plugins
+
+There is couple examples of your webserver in TS:
+```js
+// webserver/index.ts
+
+import type { WebServerArgs } from "telegram-bot-framework/types";
+module.exports = ({ bot, db, database, components }: WebServerArgs) => {
+  let express = require("express");
+  let router = express.Router();
+  let path = require("path");
+
+  router.use('/api', require('./api')({ bot, db, database, components } as WebServerArgs));
+
+  return router;
+}
+```
+As you can see:
+1. You are creating not `app` but `router`, because TBF creates own `app`,
+2. You can pass `WebServerArgs` to your api module and etc.  
+Here is example of `./api/index.ts`
+```js
+// webserver/api/index.ts
+
+import type { WebServerArgs } from "telegram-bot-framework/types";
+
+module.exports = ({ bot, database }: WebServerArgs) => {
+    let express = require("express");
+    let router = express.Router();
+
+    router.get("/posts", async (req, res) => {
+        // some code here
+        // for example do something with database or bot
+    });
+
+    return router;
+}
+```
+You need always wrap your express routers to function to provide data from parent files and TBF.  
+*Maybe later this concept will be changed...*
 
 ## Template
 
