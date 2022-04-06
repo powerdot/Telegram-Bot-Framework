@@ -25,18 +25,18 @@ module.exports = Component(() => {
                     })
                 }
 
-                let footer_buttons = [
+                let footer_buttons = [[
                     { text: "⬅️ Back", page: 'index', action: "main" },
                     { text: "🗑 Clear", page: 'checkout', action: "clear_cart" }
-                ];
-                if (owned.length > 0) footer_buttons.push({ text: `🛍 Buy for $${sum}`, page: "checkout", action: "buy" });
+                ]];
+                if (owned.length > 0) footer_buttons.push([{ text: `🛍 Buy for $${sum}`, page: "checkout", action: "buy" }]);
 
                 this.goToPlugin({
                     plugin: "list",
                     data: {
                         text: `🤑 Goods in your cart:`,
                         list: list_of_products,
-                        footer_buttons: [footer_buttons],
+                        footer_buttons,
                         page
                     }
                 })

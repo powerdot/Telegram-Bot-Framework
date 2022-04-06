@@ -158,8 +158,7 @@ interface Component {
     onMessage?: (ctx: TBFContext) => Promise<any>
     ctx?: TBFContext
     call?: (ctx: TBFContext) => Promise<any>
-    onOpen?: (ctx: TBFContext) => Promise<any>,
-    open?: (arg: { ctx: TBFContext, data: goToData, action: string }) => Promise<any>,
+    open?: (arg: { ctx: TBFContext, data: goToData, action: string }) => Promise<any>
 }
 
 type ParseButtonsArg = {
@@ -173,7 +172,7 @@ type ParseButtons = (arg: ParseButtonsArg) => ParseButtonsReturn;
 type ComponentExportArg = {
     db?: DB;
     config?: any;
-    paginator?: any;
+    // paginator?: any;
     parseButtons?: ParseButtons;
 }
 

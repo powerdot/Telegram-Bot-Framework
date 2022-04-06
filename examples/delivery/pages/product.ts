@@ -34,12 +34,13 @@ module.exports = Component(({ db }) => {
                 if (owned.length > 0) {
                     removeFromCartButton.push([{ text: "🗑 Remove from cart", action: "amount_change", data: [list_page, [from_page, product_id], 0] }]);
                     minusButton.push({ text: "-1", action: "amount_change", data: [list_page, [from_page, product_id], -1] });
+                    minusButton.push({ text: owned.length, action: "amount_change", data: [list_page, [from_page, product_id], -1] });
                 }
 
                 console.log("owned", owned.length)
 
                 await this[update_or_send]({
-                    text: `<b>${product.name}</b> for <b>$${product.price}${owned.length ? ' — you got ' + owned.length : ''}</b>\n\n<i>There is description of this tasties product.</i>`,
+                    text: `<b>${product.name}</b> for <b>$${product.price}</b>\n\n<i>There is description of this tasties product.</i>`,
                     buttons: [
                         [
                             ...minusButton,
