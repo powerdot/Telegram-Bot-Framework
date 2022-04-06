@@ -339,7 +339,7 @@ main: {
     },
 }
 ```
-2. When user sends text (or sticker, etc...) to bot it will handled by current page (`index`) and current action (`main`) in `messageHandler`.
+2. When user sends message (text in our case) to bot it will handled by current page (`index`) and current action (`main`) in `messageHandler`.
 3. We are updating (2) last bot's message (1) with handled text. User message will be automatically removed by TBF
 
 ## Express module
