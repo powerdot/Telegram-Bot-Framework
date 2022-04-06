@@ -387,7 +387,7 @@ module.exports = ({ bot, database }: WebServerArgs) => {
     return router;
 }
 ```
-You need always wrap your express routers to function to provide data from parent files and TBF.  
+You need always wrap your express routers to function to provide data from parent modules and TBF.  
 *Maybe later this concept will be changed...*
 
 ## Template
