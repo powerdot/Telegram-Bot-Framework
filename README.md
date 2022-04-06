@@ -143,7 +143,7 @@ await openPage({ ctx, page: "index" })
 // to
 await openPage({ ctx, page: "index", action: "main" })
 ```
-*So that's why we need to add **main** to our **actions** in component. It's just a default action.*
+*So that's why we need to add **main** to our **actions** in component. It's just a default action.*  
 4. TBF triggers **main** action in **index** page.
 ```js
 // pages/index.js
