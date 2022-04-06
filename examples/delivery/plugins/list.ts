@@ -1,7 +1,7 @@
 import { ButtonsRow } from "../../../src/types"
 import { Component } from "../../../src"
 
-module.exports = Component(({ db, config, paginator }) => {
+module.exports = Component(() => {
     return {
         actions: {
             async main({ data }) {

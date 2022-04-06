@@ -332,13 +332,12 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                 if (ctx.routing.type == 'message') await pageObject.onMessage(ctx);
             }
         }
-        if (!pageObject.onOpen) pageObject.onOpen = async () => { }
         if (!pageObject.open) pageObject.open = async function ({ ctx, data, action }: { ctx: TBFContext, data: any, action: string }) {
             let act = action || 'main';
             let action_fn = extractHandler(pageObject.actions[act]);
             await db.messages.removeMessages(ctx);
             await action_fn.bind({ ...binding, ctx })({ ctx, data });
-            await db.setValue(ctx, "step", pageObject.id + "�main");
+            await db.setValue(ctx, "step", pageObject.id + "�" + act);
         }
         components.push({ ...pageObject, type: componentType });
     }

@@ -1,7 +1,7 @@
 import { Component } from "../../../src";
 let products = require("../assets/products");
 
-module.exports = Component(({ db, config, paginator }) => {
+module.exports = Component(({ db }) => {
     return {
         actions: {
             async main({ data }) {
