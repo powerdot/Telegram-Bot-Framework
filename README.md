@@ -292,7 +292,7 @@ actions: {
     }
 }
 ```
-Message handler can be defined only strict - as method of action  
+Message handler can be defined only strictly - as method of action  
 ```js
 actions: {
     main: {
@@ -321,12 +321,30 @@ actions: {
             // do something with text...
 ```
 Oh! What is `false` in return?!  
-`return false` says to TBF to remove user's message. Without `false` in return his message stay in chat until chat clearing.
+`return false` says to TBF to remove user's message. Without `false` in return his message stay in chat until next chat clearing.
 
+### Combine callback and message handlers.
+
+We can imagine a little action that asks for user's name.  
+1. User triggers `/start` command that triggers `index` page that automatically triggers `main` action handler.  
+*(1) So now user got a message from bot `Hey, send me your name!`*
+```js
+main: {
+    async handler(){
+        this.send({ text: "Hey, send me your name!" }); // (1)
+    },
+    async messageHandler({text}) {
+        if(!text) return false;
+        this.update({text: `Your name is ${text}`}); // 2
+    },
+}
+```
+2. When user sends text (or sticker, etc...) to bot it will handled by current page (`index`) and current action (`main`) in `messageHandler`.
+3. We are updating (2) last bot's message (1) with handled text. User message will be automatically removed by TBF
 
 ## Express module
 TBF wraps Express and runs it on own.  
-But it using files in `/webserver/` directory with your logic and also shares `config` and `database` with your executive files.
+But TBF requires files in `/webserver/` directory with your logic and also shares `config` and `database` with your executive files.
 
 
 ## Template
