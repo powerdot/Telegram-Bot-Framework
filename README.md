@@ -390,8 +390,14 @@ module.exports = ({ bot, database }: WebServerArgs) => {
 You need always wrap your express routers to function to provide data from parent modules and TBF.  
 *Maybe later this concept will be changed...*
 
-## Template
+## Templates
+
+Here is templates to start your project as quick as possible.  
+🕺 [Template with only Bot](https://github.com/powerdot/TBF-b-template)  
+💃 [Template with Bot + Webserver](https://github.com/powerdot/TBF-bw-template)  
+
+With them you can easily to touch TBF and write own bot.  
 
 <hr/>
 
-By [@powerdot](https://github.com/powerdot)
+Powered by  [@powerdot](https://github.com/powerdot)
