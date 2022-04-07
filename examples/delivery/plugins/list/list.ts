@@ -1,5 +1,5 @@
-import { ButtonsRow } from "../../../src/types"
-import { Component } from "../../../src"
+import { ButtonsRow } from "../../../../src/types"
+import { Component } from "../../../../src"
 
 module.exports = Component(() => {
     return {

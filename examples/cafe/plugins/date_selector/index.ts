@@ -1,5 +1,5 @@
-import { Component } from "../../../src"
-import backButton from "../components/backButton";
+import { Component } from "../../../../src"
+import backButton from "../../components/backButton";
 let moment = require("moment");
 
 module.exports = Component(() => {
