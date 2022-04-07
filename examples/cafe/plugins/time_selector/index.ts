@@ -1,5 +1,5 @@
 import { Component } from "../../../../src"
-import backButton from "../../components/backButton";
+import backButton from "../../assets/backButton";
 
 module.exports = Component(() => {
     return {

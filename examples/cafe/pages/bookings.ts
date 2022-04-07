@@ -1,4 +1,4 @@
-import backButton from '../components/backButton';
+import backButton from '../assets/backButton';
 let moment = require("moment");
 
 import { Component } from "../../../src"

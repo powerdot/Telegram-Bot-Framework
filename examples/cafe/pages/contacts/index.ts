@@ -1,5 +1,5 @@
 import { Component } from "../../../../src"
-import backButton from '../../components/backButton';
+import backButton from '../../assets/backButton';
 import calcCrow from './calcCrow';
 let { establishments, ourEstablishmentsText } = require('./establishments');
 

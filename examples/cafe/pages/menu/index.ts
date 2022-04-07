@@ -1,5 +1,5 @@
 import { ButtonsRowButton } from "../../../../src/types"
-import backButton from "../../components/backButton";
+import backButton from "../../assets/backButton";
 import menu from "./menu";
 
 let categoriesButton: ButtonsRowButton[] = [{ text: "◀️ Back to Categories", action: "main" }];

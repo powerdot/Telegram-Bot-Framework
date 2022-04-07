@@ -1,5 +1,5 @@
 import { ComponentActionHandlerThisUpdateArg, PluginButton } from "../../../src/types"
-import backButton from "../components/backButton";
+import backButton from "../assets/backButton";
 
 function GoToGallery(name: string, place: string): PluginButton {
     return {
