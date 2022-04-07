@@ -4,7 +4,7 @@
 
 ## Try it out 🚀
 
-Available in Telegram [@powerdot_twithub_bot](https://t.me/powerdot_twithub_bot)
+Available in Telegram [@powerdot_twithub_bot](https://t.me/powerdot_twithub_bot)  
 And at [twithub.ilyich.ru](https://twithub.ilyich.ru) - as open board.
 
 ## About
@@ -15,7 +15,7 @@ Also you can remove own messages. Each user can post only 5 messages.
 
 ## How to run
 
-This bot works relativly as TBF example.  
+This bot works relatively as TBF example.  
 You can't run it without downloading full repository of [Telegram Bot Framework (.zip)](https://github.com/powerdot/Telegram-Bot-Framework/archive/refs/heads/master.zip).  
 1. Download TBF
 2. Unzip TBF

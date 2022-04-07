@@ -13,7 +13,7 @@ Here you can find only one page.
 
 ## How to run
 
-This bot works relativly as TBF example.  
+This bot works relatively as TBF example.  
 You can't run it without downloading full repository of [Telegram Bot Framework (.zip)](https://github.com/powerdot/Telegram-Bot-Framework/archive/refs/heads/master.zip).  
 1. Download TBF
 2. Unzip TBF
