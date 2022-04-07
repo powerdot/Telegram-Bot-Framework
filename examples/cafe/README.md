@@ -50,13 +50,13 @@ Look for `[bot]_run` script to run bot and `[bot]_debug` to debug it with Chrome
 ## Create own bot!
 
 This example uses relative dependencies to `src` of TBF.  
-If you want create your own bot, copy code and don't forget to replace dependencies to `telegram-bot-framework`.  
+If you want create your own bot, copy code and don't forget to replace dependencies to `@powerdot/telegram_bot_framework`.  
 Like:  
 ```js
 // from
 const { TBF } = require('../../../../src');
 // to
-const { TBF } = require('telegram-bot-framework');
+const { TBF } = require('@powerdot/telegram_bot_framework');
 ```
 
 🕺 [Here is you can get empty template](https://github.com/powerdot/TBF-b-template) to start coding bot like that!

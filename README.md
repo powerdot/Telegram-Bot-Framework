@@ -25,11 +25,7 @@ Node.js framework based on [Telegraf](https://github.com/telegraf/telegraf) to f
 ### Install package
 
 ```bash
-npm install telegram-bot-framework
-```
-or
-```bash
-yarn add telegram-bot-framework
+npm install @powerdot/telegram_bot_framework
 ```
 
 ### Add to your project
@@ -37,13 +33,13 @@ yarn add telegram-bot-framework
 For JS project:
 ```js
 // index.js
-let { TBF } = require("telegram-bot-framework")
+let { TBF } = require("@powerdot/telegram_bot_framework")
 ```
 
 For TS project:
 ```js
 // index.ts
-import { TBF } from "telegram-bot-framework"
+import { TBF } from "@powerdot/telegram_bot_framework"
 ```
 
 Create **enter point** for your bot:
@@ -82,7 +78,7 @@ Here we will get acquainted with the concept of pages in the telegram bot.
 ```js
 // pages/index.js
 
-let { Component } = require("telegram-bot-framework")
+let { Component } = require("@powerdot/telegram_bot_framework")
 module.exports = Component(() => { // (1)
     return { // (2)
         actions: {
@@ -148,7 +144,7 @@ await openPage({ ctx, page: "index", action: "main" })
 ```js
 // pages/index.js
 
-let { Component } = require("telegram-bot-framework")
+let { Component } = require("@powerdot/telegram_bot_framework")
 module.exports = Component(() => {
     return {
         actions: { 
@@ -206,7 +202,7 @@ If you don't want to change core logic of your Page/Plugin, you can work only wi
   
 Easiest way to create component is to use **Component** function.  
 ```js
-let { Component } = require("telegram-bot-framework");
+let { Component } = require("@powerdot/telegram_bot_framework");
 module.exports = Component(() => {
     return {
         actions: {
@@ -223,7 +219,7 @@ module.exports = Component(() => {
 * `config` App's configuration
 * `parseButtons` Function that parses TBF Buttons/Keyboard to Telegraf format.
 ```js
-let { Component } = require("telegram-bot-framework");
+let { Component } = require("@powerdot/telegram_bot_framework");
 module.exports = Component(({db, config, parseButtons}) => {
                              ^   ^       ^
 ```
@@ -355,7 +351,7 @@ There is couple examples of your webserver in TS:
 ```js
 // webserver/index.ts
 
-import type { WebServerArgs } from "telegram-bot-framework/types";
+import type { WebServerArgs } from "@powerdot/telegram_bot_framework/types";
 module.exports = ({ bot, db, database, components }: WebServerArgs) => {
   let express = require("express");
   let router = express.Router();
@@ -373,7 +369,7 @@ Here is example of `./api/index.ts`
 ```js
 // webserver/api/index.ts
 
-import type { WebServerArgs } from "telegram-bot-framework/types";
+import type { WebServerArgs } from "@powerdot/telegram_bot_framework/types";
 
 module.exports = ({ bot, database }: WebServerArgs) => {
     let express = require("express");
