@@ -106,7 +106,7 @@ export default (
     }
   }
 
-  async function removeMessages(ctx: TBFContext, onlyTrash: boolean) {
+  async function removeMessages(ctx: TBFContext, onlyTrash: boolean, removeSpecialCommands: boolean = false) {
     let chatId = getChatId(ctx);
     let query = { chatId };
     let queryTrash = { chatId, trash: onlyTrash };
@@ -126,6 +126,17 @@ export default (
         let messageId = currentMessageToRemove.messageId;
         if (!messageId) continue;
         removeMessage(ctx, messageId, 'user')
+      }
+    }
+    if (removeSpecialCommands && !onlyTrash) {
+      let currentSpecialCommandsToRemove: DatabaseMessage[] = await (await collection_specialCommandsHistory.find<DatabaseMessage>(query)).toArray();
+      if (config.debug) console.log("[removeSpecialCommands]", currentSpecialCommandsToRemove.length, "messages to remove");
+      if (currentSpecialCommandsToRemove.length != 0) {
+        for (let currentMessageToRemove of currentSpecialCommandsToRemove) {
+          let messageId = currentMessageToRemove.messageId;
+          if (!messageId) continue;
+          removeMessage(ctx, messageId, 'special')
+        }
       }
     }
     return;
@@ -150,7 +161,10 @@ export default (
   async function removeMessage(ctx: TBFContext, messageId: number, scope = 'bot') {
     let chatId = getChatId(ctx);
     if (config.debug) console.log("[removeMessage] Removing", chatId, messageId)
-    let selectedCollection = scope === 'bot' ? collection_BotMessageHistory : collection_UserMessageHistory;
+    let selectedCollection;
+    if (scope === 'bot') selectedCollection = collection_BotMessageHistory;
+    if (scope === 'user') selectedCollection = collection_UserMessageHistory;
+    if (scope === 'special') selectedCollection = collection_specialCommandsHistory;
     await selectedCollection.deleteOne({ chatId, messageId });
     try {
       bot.telegram.deleteMessage(chatId, messageId).catch(e => { });
@@ -297,7 +311,8 @@ export default (
   async function findOldMessages(unix_lim: number) {
     let b: DatabaseMessage[] = await collection_BotMessageHistory.find<DatabaseMessage>({ "message.date": { $lte: unix_lim } }).toArray();
     let u: DatabaseMessage[] = await collection_UserMessageHistory.find<DatabaseMessage>({ "message.date": { $lte: unix_lim } }).toArray();
-    return [...b, ...u];
+    let uc: DatabaseMessage[] = await collection_specialCommandsHistory.find<DatabaseMessage>({ "message.date": { $lte: unix_lim } }).toArray();
+    return [...b, ...u, ...uc];
   }
 
   return {

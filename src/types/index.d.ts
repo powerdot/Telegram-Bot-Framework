@@ -234,7 +234,7 @@ interface DB {
             removeSpecialCommandsExceptLastOne: (ctx: TBFContext | number) => Promise<void>;
         }
         addToRemoveMessages: (ctx: TBFContext, message_or_arrayMessages: Array<tt.Message> | tt.Message, trash?: boolean | undefined) => Promise<void>;
-        removeMessages: (ctx: TBFContext | number, onlyTrash?: boolean | undefined) => Promise<void>;
+        removeMessages: (ctx: TBFContext | number, onlyTrash?: boolean | undefined, removeSpecialCommands?: boolean | undefined) => Promise<void>;
         markAllMessagesAsTrash: (ctx: TBFContext | number) => Promise<void>,
         findOldMessages: (unix_lim: number) => Promise<DatabaseMessage[]>;
     },
