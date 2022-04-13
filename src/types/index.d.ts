@@ -223,19 +223,19 @@ interface DB {
     bot: Telegraf<TBFContext>,
     messages: {
         bot: {
-            getLastMessage: (ctx: TBFContext) => Promise<DatabaseMessage>;
-            getMessages: (ctx: TBFContext, count: number) => Promise<DatabaseMessage[]>;
+            getLastMessage: (ctx: TBFContext | number) => Promise<DatabaseMessage>;
+            getMessages: (ctx: TBFContext | number, count: number) => Promise<DatabaseMessage[]>;
         },
         user: {
             addUserMessage: (ctx: TBFContext, message?: any) => Promise<void>;
-            getUserMessages: (ctx: TBFContext) => Promise<DatabaseMessage[]>;
+            getUserMessages: (ctx: TBFContext | number) => Promise<DatabaseMessage[]>;
             addUserSpecialCommand: (ctx: TBFContext) => Promise<void>;
-            getUserSpecialCommands: (ctx: TBFContext) => Promise<DatabaseMessage[]>;
-            removeSpecialCommandsExceptLastOne: (ctx: TBFContext) => Promise<void>;
+            getUserSpecialCommands: (ctx: TBFContext | number) => Promise<DatabaseMessage[]>;
+            removeSpecialCommandsExceptLastOne: (ctx: TBFContext | number) => Promise<void>;
         }
         addToRemoveMessages: (ctx: TBFContext, message_or_arrayMessages: Array<tt.Message> | tt.Message, trash?: boolean | undefined) => Promise<void>;
         removeMessages: (ctx: TBFContext | number, onlyTrash?: boolean | undefined) => Promise<void>;
-        markAllMessagesAsTrash: (ctx: TBFContext) => Promise<void>,
+        markAllMessagesAsTrash: (ctx: TBFContext | number) => Promise<void>,
         findOldMessages: (unix_lim: number) => Promise<DatabaseMessage[]>;
     },
 
@@ -245,10 +245,10 @@ interface DB {
         remove: (messagespase: string) => Promise<void>;
     },
 
-    removeMessage: (ctx: TBFContext, messageId: number, scope: string) => Promise<boolean>,
-    setValue: (ctx: TBFContext, key: string, value: any) => Promise<any>,
-    getValue: (ctx: TBFContext, key: string) => Promise<any>,
-    removeValue: (ctx: TBFContext, key: string) => Promise<any>,
+    removeMessage: (ctx: TBFContext | number, messageId: number, scope: string) => Promise<boolean>,
+    setValue: (ctx: TBFContext | number, key: string, value: any) => Promise<any>,
+    getValue: (ctx: TBFContext | number, key: string) => Promise<any>,
+    removeValue: (ctx: TBFContext | number, key: string) => Promise<any>,
 
     data: {
         get: (type: any, query: any, sorting: any) => Promise<any>,
@@ -261,10 +261,10 @@ interface DB {
     user: {
         data: {
             get: (chatId: number) => Promise<any>,
-            destroy: (ctx: TBFContext) => Promise<any>,
+            destroy: (ctx: TBFContext | number) => Promise<any>,
         },
-        destroy: (ctx: TBFContext) => Promise<any>,
-        collection: (ctx: TBFContext, collection_name: string) => DBUserCollection
+        destroy: (ctx: TBFContext | number) => Promise<any>,
+        collection: (ctx: TBFContext | number, collection_name: string) => DBUserCollection
     }
 }
 

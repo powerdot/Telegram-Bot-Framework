@@ -12,6 +12,13 @@ import {
 let moment = require("moment");
 let ObjectID = require('mongodb').ObjectID;
 
+let getChatId = (ctx: TBFContext | number | string) => {
+  if (typeof ctx === "number") return ctx;
+  if (typeof ctx === "string") return Number(ctx);
+  if (typeof ctx === "object") return Number(ctx.chatId);
+  return -1;
+};
+
 export default (
   bot: Telegraf<TBFContext>,
   { client,
@@ -26,7 +33,8 @@ export default (
   }: MongoDataBase, config: TBFConfig): DB => {
 
   async function getValue(ctx: TBFContext, key: string) {
-    let data = await collection_UserData.findOne({ chatId: ctx.chatId, name: key });
+    let chatId = getChatId(ctx);
+    let data = await collection_UserData.findOne({ chatId, name: key });
     data = data ? data.value : undefined;
     if (config.debug) console.log("[GET value]", key, '->', data);
     return data;
@@ -34,12 +42,14 @@ export default (
 
   async function setValue(ctx: TBFContext, key: string, value: any) {
     if (config.debug) console.log("[SET value]", key, "=", value)
-    return await collection_UserData.updateOne({ name: key, chatId: ctx.chatId }, { $set: { name: key, chatId: ctx.chatId, value } }, { upsert: true });
+    let chatId = getChatId(ctx);
+    return await collection_UserData.updateOne({ name: key, chatId }, { $set: { name: key, chatId, value } }, { upsert: true });
   }
 
   async function removeValue(ctx: TBFContext, key: string) {
     if (config.debug) console.log("[REMOVE value]", key);
-    return await collection_UserData.deleteOne({ name: key, chatId: ctx.chatId });
+    let chatId = getChatId(ctx);
+    return await collection_UserData.deleteOne({ name: key, chatId });
   }
 
   async function TempDataAdd(chatId: number, messagespase: string, uniqid: string, data: any) {
@@ -70,33 +80,34 @@ export default (
   }
 
   function userCollection(ctx: TBFContext, collection_name: string) {
+    let chatId = getChatId(ctx);
     return {
       find(query: object = {}) {
-        return collection_UserDataCollection.findOne({ collection_name, chatId: ctx.chatId, ...parseQuery(query) });
+        return collection_UserDataCollection.findOne({ collection_name, chatId, ...parseQuery(query) });
       },
       findAll(query: object = {}) {
-        return collection_UserDataCollection.find({ collection_name, chatId: ctx.chatId, ...parseQuery(query) }).toArray();
+        return collection_UserDataCollection.find({ collection_name, chatId, ...parseQuery(query) }).toArray();
       },
       insert(value: object) {
-        return collection_UserDataCollection.insertOne({ collection_name, chatId: ctx.chatId, ...value });
+        return collection_UserDataCollection.insertOne({ collection_name, chatId, ...value });
       },
       update(query: object, value: object) {
-        return collection_UserDataCollection.updateOne({ collection_name, chatId: ctx.chatId, ...parseQuery(query) }, { $set: value });
+        return collection_UserDataCollection.updateOne({ collection_name, chatId, ...parseQuery(query) }, { $set: value });
       },
       updateMany(query: object, value: object) {
-        return collection_UserDataCollection.updateMany({ collection_name, chatId: ctx.chatId, ...parseQuery(query) }, { $set: value });
+        return collection_UserDataCollection.updateMany({ collection_name, chatId, ...parseQuery(query) }, { $set: value });
       },
       delete(query: object) {
-        return collection_UserDataCollection.deleteOne({ collection_name, chatId: ctx.chatId, ...parseQuery(query) });
+        return collection_UserDataCollection.deleteOne({ collection_name, chatId, ...parseQuery(query) });
       },
       deleteMany(query: object) {
-        return collection_UserDataCollection.deleteMany({ collection_name, chatId: ctx.chatId, ...parseQuery(query) });
+        return collection_UserDataCollection.deleteMany({ collection_name, chatId, ...parseQuery(query) });
       }
     }
   }
 
   async function removeMessages(ctx: TBFContext, onlyTrash: boolean) {
-    let chatId = ctx.chatId;
+    let chatId = getChatId(ctx);
     let query = { chatId };
     let queryTrash = { chatId, trash: onlyTrash };
     let currentBotMessagesToRemove: (DatabaseMessage)[] = await (await collection_BotMessageHistory.find<DatabaseMessage>(onlyTrash ? queryTrash : query)).toArray();
@@ -122,7 +133,7 @@ export default (
 
   async function addToRemoveMessages(ctx: TBFContext, message_or_arrayMessages: tt.Message | tt.Message[], trash: boolean) {
     if (trash === undefined) trash = false;
-    let chatId = ctx.chatId;
+    let chatId = getChatId(ctx);
     let messages: TelegramMessage[] = [];
     if (!Array.isArray(message_or_arrayMessages)) message_or_arrayMessages = [message_or_arrayMessages];
     messages = message_or_arrayMessages;
@@ -137,7 +148,7 @@ export default (
   }
 
   async function removeMessage(ctx: TBFContext, messageId: number, scope = 'bot') {
-    let chatId = ctx.chatId;
+    let chatId = getChatId(ctx);
     if (config.debug) console.log("[removeMessage] Removing", chatId, messageId)
     let selectedCollection = scope === 'bot' ? collection_BotMessageHistory : collection_UserMessageHistory;
     await selectedCollection.deleteOne({ chatId, messageId });
@@ -148,7 +159,7 @@ export default (
   }
 
   async function markAllMessagesAsTrash(ctx: TBFContext) {
-    let chatId = ctx.chatId;
+    let chatId = getChatId(ctx);
     let old_msgs: DatabaseMessage[] = await collection_BotMessageHistory.find<DatabaseMessage>({ chatId }).toArray();
     let usr_msgs = await getUserMessages(ctx);
     let msgs = [...old_msgs, ...usr_msgs];
@@ -158,20 +169,20 @@ export default (
   }
 
   async function addUserMessage(ctx: TBFContext) {
-    let chatId = ctx.chatId;
+    let chatId = getChatId(ctx);
     let message = ctx.message
     await collection_UserMessageHistory.insertOne({ chatId, message, messageId: message.message_id } as DatabaseMessage);
   }
 
   async function getUserMessages(ctx: TBFContext) {
-    let chatId = ctx.chatId;
+    let chatId = getChatId(ctx);
     let messages: DatabaseMessage[] = await collection_UserMessageHistory.find<DatabaseMessage>({ chatId }).toArray();
     if (!messages) messages = [];
     return messages;
   }
 
   async function getLastMessage(ctx: TBFContext) {
-    let chatId = ctx.chatId;
+    let chatId = getChatId(ctx);
     let msgs: DatabaseMessage[] = await collection_BotMessageHistory.find<DatabaseMessage>({ chatId }).sort({ messageId: -1 }).toArray();
     let msg: DatabaseMessage;
     if (msgs) {
@@ -183,7 +194,7 @@ export default (
   }
 
   async function botGetMessages(ctx: TBFContext, count: number = 10) {
-    let chatId = ctx.chatId;
+    let chatId = getChatId(ctx);
     let messages: DatabaseMessage[] = await collection_BotMessageHistory.find<DatabaseMessage>({ chatId }).sort({ messageId: -1 }).limit(count).toArray();
     if (!messages) messages = [];
     return messages;
@@ -233,28 +244,30 @@ export default (
   }
 
   async function _UserDestroy(ctx: TBFContext) {
+    let chatId = getChatId(ctx);
     await _UserDataDestroy(ctx)
-    await collection_Users.deleteMany({ chatId: ctx.chatId });
-    await collection_UserMessageHistory.deleteMany({ chatId: ctx.chatId });
-    await collection_BotMessageHistory.deleteMany({ chatId: ctx.chatId });
+    await collection_Users.deleteMany({ chatId });
+    await collection_UserMessageHistory.deleteMany({ chatId });
+    await collection_BotMessageHistory.deleteMany({ chatId });
   }
 
   async function _UserDataDestroy(ctx: TBFContext) {
-    await collection_UserData.deleteMany({ chatId: ctx.chatId });
-    await collection_UserDataCollection.deleteMany({ chatId: ctx.chatId });
-    await collection_TempData.deleteMany({ chatId: ctx.chatId });
+    let chatId = getChatId(ctx);
+    await collection_UserData.deleteMany({ chatId });
+    await collection_UserDataCollection.deleteMany({ chatId });
+    await collection_TempData.deleteMany({ chatId });
     await setValue(ctx, "step", false);
   }
 
   async function _addUserSpecialCommand(ctx: TBFContext) {
-    let chatId = ctx.chatId;
+    let chatId = getChatId(ctx);
     let message = ctx.message
     if (config.debug) console.log("[_addUserSpecialCommand]", chatId, message);
     await collection_specialCommandsHistory.insertOne({ chatId, message, messageId: message.message_id } as DatabaseMessage);
   }
 
   async function _getUserSpecialCommands(ctx: TBFContext) {
-    let chatId = ctx.chatId;
+    let chatId = getChatId(ctx);
     let messages: DatabaseMessage[] = await collection_specialCommandsHistory.find<DatabaseMessage>({ chatId }).toArray();
     if (!messages) messages = [];
     if (config.debug) console.log("[_getUserSpecialCommands]", messages);
@@ -262,7 +275,7 @@ export default (
   }
 
   async function _removeSpecialCommandsExceptLastOne(ctx: TBFContext) {
-    let chatId = ctx.chatId;
+    let chatId = getChatId(ctx);
     let messages = await _getUserSpecialCommands(ctx);
     let lastMessage = messages[messages.length - 1];
     if (config.debug) console.log("[_removeSpecialCommandsExceptLastOne]:", messages, lastMessage);
@@ -283,7 +296,7 @@ export default (
    */
   async function findOldMessages(unix_lim: number) {
     let b: DatabaseMessage[] = await collection_BotMessageHistory.find<DatabaseMessage>({ "message.date": { $lte: unix_lim } }).toArray();
-    let u: DatabaseMessage[] = await collection_BotMessageHistory.find<DatabaseMessage>({ "message.date": { $lte: unix_lim } }).toArray();
+    let u: DatabaseMessage[] = await collection_UserMessageHistory.find<DatabaseMessage>({ "message.date": { $lte: unix_lim } }).toArray();
     return [...b, ...u];
   }
 
