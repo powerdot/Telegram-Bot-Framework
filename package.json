@@ -4,7 +4,6 @@
   "description": "",
   "main": "lib/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc && cp -r src/types lib",
     "cafe_debug": "nodemon --inspect=3592 -e ts,tsx --exec node -r ts-node/register ./examples/cafe/index.ts",
     "cafe_run": "nodemon -e ts,tsx --exec node -r ts-node/register ./examples/cafe/index.ts",
@@ -28,7 +27,7 @@
     "mongodb": "^4.4.1",
     "request": "^2.88.2",
     "socks-proxy-agent": "^4.0.2",
-    "telegraf": "^4.7.0"
+    "telegraf": "^4.8.1"
   },
   "_moduleAliases": {
     "@": "./src"
