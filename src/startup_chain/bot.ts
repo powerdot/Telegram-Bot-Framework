@@ -16,7 +16,7 @@ export default function ({
             console.log("ℹ️ ", "Telegram token is set.");
         }
 
-        let bot;
+        let bot: any;
         if (apiUrl) {
             bot = new Telegraf(_token, {
                 telegram: {
@@ -29,7 +29,7 @@ export default function ({
             console.log("ℹ️ ", "Bot without proxy and apiUrl");
         }
 
-        bot.catch((err) => {
+        bot.catch((err: any) => {
             console.error("🚫 ", "Telegram bot error:", err);
         });
 

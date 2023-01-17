@@ -181,7 +181,7 @@ interface ComponentExport {
 }
 
 
-import { MongoClient, Collection as MongoCollection, FindCursor, WithId, Document, InsertOneResult, UpdateResult, DeleteResult } from 'mongodb/mongodb';
+import { MongoClient, Collection as MongoCollection, FindCursor, WithId, Document, InsertOneResult, UpdateResult, DeleteResult, Collection } from 'mongodb/mongodb';
 import { Message } from 'typegram';
 interface MongoDataBase {
     client: MongoClient,
@@ -193,12 +193,13 @@ interface MongoDataBase {
     collection_specialCommandsHistory: MongoCollection,
     collection_UserDataCollection: MongoCollection,
     collection_TempData: MongoCollection,
+    collection_SharedData: MongoCollection,
 }
 
 interface StartupChainInstances {
     bot: Telegraf<TBFContext>;
     database: MongoDataBase;
-    app: ExpressApp | undefined;
+    app?: ExpressApp | undefined;
 }
 
 
@@ -221,6 +222,7 @@ type DBUserCollection = {
 
 interface DB {
     bot: Telegraf<TBFContext>,
+    client: MongoClient,
     messages: {
         bot: {
             getLastMessage: (ctx: TBFContext | number) => Promise<DatabaseMessage>;
@@ -265,6 +267,17 @@ interface DB {
         },
         destroy: (ctx: TBFContext | number) => Promise<any>,
         collection: (ctx: TBFContext | number, collection_name: string) => DBUserCollection
+    },
+    collections: {
+        userData: Collection,
+        botMessageHistory: Collection,
+        userMessageHistory: Collection,
+        data: Collection,
+        users: Collection,
+        specialCommandsHistory: Collection,
+        userDataCollection: Collection,
+        tempData: Collection,
+        sharedData: Collection
     }
 }
 
@@ -280,7 +293,7 @@ interface PaginatorReturn {
 
 interface TBFPromiseReturn {
     bot: Telegraf<TBFContext>;
-    app: ExpressApp;
+    app: ExpressApp | undefined;
     database: MongoDataBase;
     db: DB;
     pages: Component[],

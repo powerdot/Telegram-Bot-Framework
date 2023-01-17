@@ -21,6 +21,7 @@ export default function ({
             let collection_specialCommandsHistory: MongoCollection;
             let collection_UserDataCollection: MongoCollection;
             let collection_TempData: MongoCollection;
+            let collection_SharedData: MongoCollection;
 
             console.log("ℹ️ ", `Database (${_database_name}) url: ${_url}`);
 
@@ -33,6 +34,7 @@ export default function ({
             collection_specialCommandsHistory = client.db(_database_name).collection("special_commands_history");
             collection_UserDataCollection = client.db(_database_name).collection("user_data_collection");
             collection_TempData = client.db(_database_name).collection("temp_data");
+            collection_SharedData = client.db(_database_name).collection("shared_data");
             resolve({
                 client,
                 collection_UserData,
@@ -42,7 +44,8 @@ export default function ({
                 collection_Users,
                 collection_specialCommandsHistory,
                 collection_UserDataCollection,
-                collection_TempData
+                collection_TempData,
+                collection_SharedData
             } as MongoDataBase);
             console.log("ℹ️ ", "Database connected");
         } catch (error) {

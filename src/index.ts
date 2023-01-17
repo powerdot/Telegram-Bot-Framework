@@ -59,11 +59,11 @@ let Create = ({ webServer, telegram, mongo, config }: TBFArgs): Promise<TBFPromi
                 db,
                 pages,
                 plugins,
-                openPage: ({ ctx, page, data, action }) => {
+                openPage: ({ ctx, page, data, action = "main" }) => {
                     return new Promise(async (resolve, reject) => {
                         let found_page = components.find(p => p.id === page);
                         if (!found_page) return reject(new Error("Component not found: " + page));
-                        found_page.open({ ctx, data, action });
+                        if (found_page.open) found_page.open({ ctx, data, action });
                         return resolve(true);
                     });
                 }

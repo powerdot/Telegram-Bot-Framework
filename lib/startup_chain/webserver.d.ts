@@ -1,4 +1,5 @@
 import { Application } from "express";
+import { TBFConfig, WebServerArgs } from "../types";
 export default function ({ module, }: {
-    module: any;
-}, config: any): Promise<Application>;
+    module: (args: WebServerArgs) => {};
+}, config: TBFConfig | undefined): Promise<Application | undefined> | undefined;

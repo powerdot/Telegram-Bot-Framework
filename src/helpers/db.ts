@@ -30,6 +30,7 @@ export default (
     collection_specialCommandsHistory,
     collection_UserDataCollection,
     collection_TempData,
+    collection_SharedData
   }: MongoDataBase, config: TBFConfig): DB => {
 
   async function getValue(ctx: TBFContext, key: string) {
@@ -123,7 +124,7 @@ export default (
     if (config.debug) console.log("[removeUserMessages]", currentUserMessagesToRemove.length, "messages to remove");
     if (currentUserMessagesToRemove.length != 0) {
       for (let currentMessageToRemove of currentUserMessagesToRemove) {
-        let messageId = currentMessageToRemove.messageId;
+        let messageId = currentMessageToRemove?.messageId;
         if (!messageId) continue;
         removeMessage(ctx, messageId, 'user')
       }
@@ -133,7 +134,7 @@ export default (
       if (config.debug) console.log("[removeSpecialCommands]", currentSpecialCommandsToRemove.length, "messages to remove");
       if (currentSpecialCommandsToRemove.length != 0) {
         for (let currentMessageToRemove of currentSpecialCommandsToRemove) {
-          let messageId = currentMessageToRemove.messageId;
+          let messageId = currentMessageToRemove?.messageId;
           if (!messageId) continue;
           removeMessage(ctx, messageId, 'special')
         }
@@ -151,7 +152,7 @@ export default (
     if (config.debug) console.log("[addToRemoveMessages]", messages);
     for (let message of messages) {
       if (trash && config.debug) console.log("[addToRemoveMessages] Will be deleted:", message, message.message_id, trash);
-      let selectedCollection = message.from.is_bot ? collection_BotMessageHistory : collection_UserMessageHistory;
+      let selectedCollection = message?.from?.is_bot ? collection_BotMessageHistory : collection_UserMessageHistory;
       await selectedCollection.insertOne({ chatId, message, messageId: message.message_id, trash } as DatabaseMessage).catch(function (e) {
         console.error('addToRemoveMessages error', e)
       });
@@ -317,6 +318,7 @@ export default (
 
   return {
     bot,
+    client,
     messages: {
       bot: {
         getLastMessage,
@@ -361,6 +363,17 @@ export default (
       },
       destroy: _UserDestroy,
       collection: userCollection
+    },
+    collections: {
+      botMessageHistory: collection_BotMessageHistory,
+      userMessageHistory: collection_UserMessageHistory,
+      specialCommandsHistory: collection_specialCommandsHistory,
+      users: collection_Users,
+      userData: collection_UserData,
+      userDataCollection: collection_UserDataCollection,
+      tempData: collection_TempData,
+      data: collection_Data,
+      sharedData: collection_SharedData
     }
   }
 }

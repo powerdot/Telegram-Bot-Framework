@@ -1,11 +1,20 @@
 import { Application } from "express";
+import { TBFArgs, TBFConfig, WebServerArgs } from "../types";
 
 export default function ({
     module,
-}, config): Promise<Application> {
+}: {
+    module: (args: WebServerArgs) => {}
+},
+    config: TBFConfig | undefined
+): Promise<Application | undefined> | undefined {
+    if (!config) {
+        console.log('📛', 'Set config');
+        return process.exit();
+    }
     // HTTP Service
     let express = require("express");
-    let _address = config.webServer.address;
+    let _address = config?.webServer?.address;
     if (!_address) {
         console.log('📛', 'Set web server address');
         process.exit();
@@ -13,7 +22,7 @@ export default function ({
         console.log("ℹ️ ", "Bot's web server address:", _address);
     }
 
-    let _port = config.webServer.port;
+    let _port = config?.webServer?.port;
     if (!_port) {
         console.log('📛', 'Set port .env');
         process.exit();

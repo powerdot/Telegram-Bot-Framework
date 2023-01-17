@@ -8,7 +8,10 @@ function activate({ telegram, mongo, webServer, config }: TBFArgs): Promise<Star
         try {
             let instances: StartupChainInstances = {
                 bot: await _bot(telegram),
-                database: await _database(mongo),
+                database: await _database(mongo || {
+                    url: "mongodb://localhost:27017",
+                    dbName: "tbf_default"
+                }),
                 app: (webServer && webServer.module) ? await _webserver(webServer, config) : undefined
             }
             return resolve(instances);
