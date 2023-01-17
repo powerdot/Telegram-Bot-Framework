@@ -310,6 +310,7 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                             game: "game" in ctx.message ? ctx.message.game : undefined,
                             invoice: "invoice" in ctx.message ? ctx.message.invoice : undefined,
                             dice: "dice" in ctx.message ? ctx.message.dice : undefined,
+                            caption: "caption" in ctx.message ? ctx.message.caption : undefined,
                         });
                         if (typeof result === "boolean") {
                             if (!result) {

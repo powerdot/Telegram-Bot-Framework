@@ -50,6 +50,7 @@ type ComponentActionArg = {
     game?: tt.Game;
     invoice?: tt.Invoice;
     dice?: tt.Dice;
+    caption?: string;
 }
 
 type ButtonsRowButton = {
