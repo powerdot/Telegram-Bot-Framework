@@ -112,20 +112,26 @@ interface ComponentActionHandlerThisMethods {
     clearChat: () => Promise<any>;
 }
 
+interface ComponentActionHandlerThisUserDefaultMethods {
+    get: () => Promise<Object>;
+    list: () => Promise<any>;
+    getValue: (key: string) => Promise<any>;
+    setValue: (key: string, value: any) => Promise<any>;
+    removeValue: (key: string) => Promise<any>;
+    destroy: () => Promise<any>;
+    collection: DBUserCollection,
+}
+
+type ComponentActionHandlerThisUserAsyncMethods = {
+    getCurrentRoute: () => Promise<{ page: string, action: string }>;
+} & ComponentActionHandlerThisMethods;
+
 type ComponentActionHandlerThis = {
     id: string;
     type: string;
     ctx: TBFContext;
-    user: (arg?: { user_id }) => {
-        get: () => Promise<Object>;
-        list: () => Promise<any>;
-        getValue: (key: string) => Promise<any>;
-        setValue: (key: string, value: any) => Promise<any>;
-        removeValue: (key: string) => Promise<any>;
-        destroy: () => Promise<any>;
-        collection: DBUserCollection,
-        methods: ComponentActionHandlerThisMethods
-    }
+    user(this: ComponentActionHandlerThis): ComponentActionHandlerThisUserDefaultMethods;
+    userMethods(this: ComponentActionHandlerThis, arg: { user_id: number }): Promise<ComponentActionHandlerThisUserAsyncMethods>
 } & ComponentActionHandlerThisMethods;
 
 interface ComponentActionMessageHandler {

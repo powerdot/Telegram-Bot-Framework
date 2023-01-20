@@ -183,13 +183,13 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     options.reply_markup.keyboard = [];
                 }
 
-                if (this.ctx.routing.isMessageFromUser) {
-                    // get last bot's message and update it
-                    let lastBotMessage = await db.messages.bot.getLastMessage(this.ctx);
-                    if (lastBotMessage) {
-                        if (config.debug) console.log("[update] message to update:", lastBotMessage);
-                        let edited;
-                        try {
+                try {
+                    if (this.ctx.routing.isMessageFromUser) {
+                        // get last bot's message and update it
+                        let lastBotMessage = await db.messages.bot.getLastMessage(this.ctx);
+                        if (lastBotMessage) {
+                            if (config.debug) console.log("[update] message to update:", lastBotMessage);
+                            let edited;
                             edited = await this.ctx.telegram.editMessageText(
                                 this.ctx.chatId,
                                 lastBotMessage.messageId,
@@ -197,12 +197,13 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                                 text,
                                 { ...options, parse_mode: 'HTML' }
                             );
-                        } catch (e) {
-                            console.warn("⚠️", "Warning:", e);
+                            await db.messages.removeMessages(this.ctx, true);
+                            return edited;
                         }
-                        await db.messages.removeMessages(this.ctx, true);
-                        return edited;
+
                     }
+                } catch (e) {
+                    console.warn("⚠️", "Warning:", e);
                 }
 
                 try {
@@ -265,57 +266,69 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                 let _this: ComponentActionHandlerThis = this;
                 return await db.messages.removeMessages(_this.ctx);
             },
-            user: function (this: ComponentActionHandlerThis, { user_id = false } = { user_id: false }) {
+            user: function (this: ComponentActionHandlerThis) {
                 let _this: ComponentActionHandlerThis = this;
-
-                let userBinding = {};
-                if (user_id) {
-                    let ctx = {
-                        chatId: user_id,
-                        telegram: _this.ctx.telegram,
-                    }
-                    userBinding = {
-                        ...binding,
-                        ctx
-                    }
-                }
 
                 return {
                     async get() {
-                        let chat_id = user_id || _this.ctx.chatId;
+                        let chat_id = _this.ctx.chatId;
                         return db.user.data.get(chat_id);
                     },
                     list: async () => db.users.list(),
-                    getValue: async (key) => db.getValue(user_id || _this.ctx, key),
-                    setValue: async (key, value) => db.setValue(user_id || _this.ctx, key, value),
-                    removeValue: async (key) => db.removeValue(user_id || _this.ctx, key),
-                    destroy: async () => db.user.destroy(user_id || _this.ctx.chatId),
-                    collection: db.user.collection(_this.ctx, user_id || _this.ctx.chatId),
-                    methods: {
-                        async send(args) {
-                            return binding.send.bind(userBinding)(args);
-                        },
-                        async update(args) {
-                            return binding.update.bind(userBinding)(args);
-                        },
-                        async goToPage(args) {
-                            return binding.goToPage.bind(userBinding)(args);
-                        },
-                        async goToPlugin(args) {
-                            return binding.goToPlugin.bind(userBinding)(args);
-                        },
-                        async goToAction(args) {
-                            return binding.goToAction.bind(userBinding)(args);
-                        },
-                        async goToComponent(args) {
-                            return binding.goToComponent.bind(userBinding)(args);
-                        },
-                        async clearChat() {
-                            return binding.clearChat.bind(userBinding)();
-                        },
-                        async sendMediaGroup(args) {
-                            return binding.sendMediaGroup.bind(userBinding)(args);
-                        },
+                    getValue: async (key) => db.getValue(_this.ctx, key),
+                    setValue: async (key, value) => db.setValue(_this.ctx, key, value),
+                    removeValue: async (key) => db.removeValue(_this.ctx, key),
+                    destroy: async () => db.user.destroy(_this.ctx.chatId),
+                    collection: db.user.collection(_this.ctx, String(_this.ctx.chatId)),
+                }
+            },
+            userMethods: async function (this: ComponentActionHandlerThis, { user_id }) {
+                let _this: ComponentActionHandlerThis = this;
+
+                let userBinding: ComponentActionHandlerThis;
+                let lastUserFrom = await db.getValue(user_id, "from");
+                let ctx: TBFContext = {
+                    ..._this.ctx,
+                    update: undefined,
+                    telegram: _this.ctx.telegram,
+                    from: lastUserFrom
+                } as TBFContext;
+                if (ctx.chatId) ctx.chatId = user_id;
+                if (ctx.chat) ctx.chat.id = user_id;
+                userBinding = {
+                    ...binding,
+                    ctx
+                }
+
+                return {
+                    async send(args) {
+                        return binding.send.bind(userBinding)(args);
+                    },
+                    async update(args) {
+                        return binding.update.bind(userBinding)(args);
+                    },
+                    async goToPage(args) {
+                        return binding.goToPage.bind(userBinding)(args);
+                    },
+                    async goToPlugin(args) {
+                        return binding.goToPlugin.bind(userBinding)(args);
+                    },
+                    async goToAction(args) {
+                        return binding.goToAction.bind(userBinding)(args);
+                    },
+                    async goToComponent(args) {
+                        return binding.goToComponent.bind(userBinding)(args);
+                    },
+                    async clearChat() {
+                        return binding.clearChat.bind(userBinding)();
+                    },
+                    async sendMediaGroup(args) {
+                        return binding.sendMediaGroup.bind(userBinding)(args);
+                    },
+                    getCurrentRoute: async () => {
+                        let step = await db.getValue(user_id, "step");
+                        let [page, action] = step.split("�");
+                        return { page, action };
                     }
                 }
             }
@@ -355,6 +368,9 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     if (config.debug) console.log("[onMessage] messageHandler:", handler);
                     if (handler) {
                         if (handler.clearChat) await db.messages.removeMessages(ctx);
+                        if (ctx.from) {
+                            await db.setValue(ctx, "from", ctx.from);
+                        }
                         let handler_fn = extractHandler(handler);
                         let result = await handler_fn.bind({ ...binding, ctx })({
                             ctx,
@@ -397,6 +413,9 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
             }
         }
         if (!pageObject.open) pageObject.open = async function ({ ctx, data, action }: { ctx: TBFContext, data: any, action: string }) {
+            if (ctx.from) {
+                await db.setValue(ctx, "from", ctx.from);
+            }
             let act = action || 'main';
             let action_fn = extractHandler(pageObject.actions[act]);
             await db.messages.removeMessages(ctx);

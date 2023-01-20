@@ -102,8 +102,6 @@ type PluginButton = {
 }
 
 interface ComponentActionHandlerThisMethods {
-    id: string;
-    type: string;
     send: (arg: ComponentActionHandlerThisSendArg) => Promise<any>;
     update: (arg: ComponentActionHandlerThisUpdateArg) => Promise<any>;
     sendMediaGroup: (arg: ComponentActionHandlerThisSendArg & { media: any[], options?: object }) => Promise<any>;
@@ -112,19 +110,28 @@ interface ComponentActionHandlerThisMethods {
     goToComponent: (arg: { component: string, action?: string, data?: goToData, type: string }) => Promise<any>;
     goToPlugin: (arg: { plugin: string, action?: string, data: pluginGoToData }) => Promise<any>;
     clearChat: () => Promise<any>;
-    user: (arg?: { user_id }) => {
-        get: () => Promise<Object>;
-        list: () => Promise<any>;
-        getValue: (key: string) => Promise<any>;
-        setValue: (key: string, value: any) => Promise<any>;
-        removeValue: (key: string) => Promise<any>;
-        destroy: () => Promise<any>;
-        collection: DBUserCollection
-    }
 }
 
+interface ComponentActionHandlerThisUserDefaultMethods {
+    get: () => Promise<Object>;
+    list: () => Promise<any>;
+    getValue: (key: string) => Promise<any>;
+    setValue: (key: string, value: any) => Promise<any>;
+    removeValue: (key: string) => Promise<any>;
+    destroy: () => Promise<any>;
+    collection: DBUserCollection,
+}
+
+type ComponentActionHandlerThisUserAsyncMethods = {
+    getCurrentRoute: () => Promise<{ page: string, action: string }>;
+} & ComponentActionHandlerThisMethods;
+
 type ComponentActionHandlerThis = {
+    id: string;
+    type: string;
     ctx: TBFContext;
+    user(this: ComponentActionHandlerThis): ComponentActionHandlerThisUserDefaultMethods;
+    userMethods(this: ComponentActionHandlerThis, arg: { user_id: number }): Promise<ComponentActionHandlerThisUserAsyncMethods>
 } & ComponentActionHandlerThisMethods;
 
 interface ComponentActionMessageHandler {
