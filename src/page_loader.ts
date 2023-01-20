@@ -153,9 +153,13 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     options.reply_markup.keyboard = [];
                 }
 
-                let message = await _this.ctx.telegram.sendMessage(_this.ctx.chatId, text, { ...options, parse_mode: 'HTML' });
-                await db.messages.addToRemoveMessages(_this.ctx, [message], false)
-                return message;
+                try {
+                    let message = await _this.ctx.telegram.sendMessage(_this.ctx.chatId, text, { ...options, parse_mode: 'HTML' });
+                    await db.messages.addToRemoveMessages(_this.ctx, [message], false)
+                    return message;
+                } catch (error) {
+                    console.error(error);
+                }
             },
             async update(this: ComponentActionHandlerThis, { text = "", buttons = [], keyboard = [] }) {
                 if (text === undefined) throw new Error("update() text is empty");
@@ -201,11 +205,21 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     }
                 }
 
-                return await this.ctx.editMessageText(text, { ...options, parse_mode: 'HTML' });
+                try {
+                    return await this.ctx.editMessageText(text, { ...options, parse_mode: 'HTML' });
+                } catch (error) {
+                    console.error("update error", error);
+                    return null;
+                }
             },
             async sendMediaGroup(this: ComponentActionHandlerThis, { media = [], options = {} }) {
                 if (media.length === 0) throw new Error("sendMediaGroup() media is empty");
-                return removeMessageWrapper.bind(this)('sendMediaGroup', [media, options]);
+                try {
+                    return await removeMessageWrapper.bind(this)('sendMediaGroup', [media, options]);
+                } catch (error) {
+                    console.error("sendMediaGroup error", error);
+                    return null;
+                }
             },
             async goToComponent(this: ComponentActionHandlerThis, { component, action = "main", data, type = "" }) {
                 if (!type) return Error("goToComponent() type is empty");
@@ -214,16 +228,21 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                 if (found_component) {
                     await db.setValue(_this.ctx, "step", component + "�" + action);
                     let action_fn = extractHandler(found_component.actions[action]);
-                    action_fn.bind({ ..._this, ...{ id: component } })({ ctx: _this.ctx, data });
+                    try {
+                        return await action_fn.bind({ ..._this, ...{ id: component } })({ ctx: _this.ctx, data });
+                    } catch (error) {
+                        console.error("goToComponent error", error);
+                        return null;
+                    }
                 } else {
                     throw new Error("goToComponent() component not found: " + component);
                 }
             },
             async goToPage(this: ComponentActionHandlerThis, { page, action = "main", data }) {
-                this.goToComponent({ component: page, action, data, type: "page" });
+                return await this.goToComponent({ component: page, action, data, type: "page" });
             },
             async goToPlugin(this: ComponentActionHandlerThis, { plugin, action = "main", data }) {
-                this.goToComponent({ component: plugin, action, data, type: "plugin" });
+                return await this.goToComponent({ component: plugin, action, data, type: "plugin" });
             },
             async goToAction(this: ComponentActionHandlerThis, { action, data }) {
                 let _this: ComponentActionHandlerThis = this;
@@ -232,17 +251,35 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                 if (page_action) {
                     await db.setValue(_this.ctx, "step", _this.id + "�" + action);
                     let action_fn = extractHandler(page_action);
-                    action_fn.bind({ ..._this, ...{ id: _this.id } })({ ctx: _this.ctx, data });
+                    try {
+                        return await action_fn.bind({ ..._this, ...{ id: _this.id } })({ ctx: _this.ctx, data });
+                    } catch (error) {
+                        console.error("goToAction error", error);
+                        return null;
+                    }
                 } else {
                     throw new Error("goToAction() action not found: " + action);
                 }
             },
             async clearChat(this: ComponentActionHandlerThis) {
                 let _this: ComponentActionHandlerThis = this;
-                await db.messages.removeMessages(_this.ctx);
+                return await db.messages.removeMessages(_this.ctx);
             },
             user: function (this: ComponentActionHandlerThis, { user_id = false } = { user_id: false }) {
                 let _this: ComponentActionHandlerThis = this;
+
+                let userBinding = {};
+                if (user_id) {
+                    let ctx = {
+                        chatId: user_id,
+                        telegram: _this.ctx.telegram,
+                    }
+                    userBinding = {
+                        ...binding,
+                        ctx
+                    }
+                }
+
                 return {
                     async get() {
                         let chat_id = user_id || _this.ctx.chatId;
@@ -253,7 +290,33 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     setValue: async (key, value) => db.setValue(user_id || _this.ctx, key, value),
                     removeValue: async (key) => db.removeValue(user_id || _this.ctx, key),
                     destroy: async () => db.user.destroy(user_id || _this.ctx.chatId),
-                    collection: db.user.collection(_this.ctx, user_id || _this.ctx.chatId)
+                    collection: db.user.collection(_this.ctx, user_id || _this.ctx.chatId),
+                    methods: {
+                        async send(args) {
+                            return binding.send.bind(userBinding)(args);
+                        },
+                        async update(args) {
+                            return binding.update.bind(userBinding)(args);
+                        },
+                        async goToPage(args) {
+                            return binding.goToPage.bind(userBinding)(args);
+                        },
+                        async goToPlugin(args) {
+                            return binding.goToPlugin.bind(userBinding)(args);
+                        },
+                        async goToAction(args) {
+                            return binding.goToAction.bind(userBinding)(args);
+                        },
+                        async goToComponent(args) {
+                            return binding.goToComponent.bind(userBinding)(args);
+                        },
+                        async clearChat() {
+                            return binding.clearChat.bind(userBinding)();
+                        },
+                        async sendMediaGroup(args) {
+                            return binding.sendMediaGroup.bind(userBinding)(args);
+                        },
+                    }
                 }
             }
         }
@@ -337,8 +400,8 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
             let act = action || 'main';
             let action_fn = extractHandler(pageObject.actions[act]);
             await db.messages.removeMessages(ctx);
-            await action_fn.bind({ ...binding, ctx })({ ctx, data });
             await db.setValue(ctx, "step", pageObject.id + "�" + act);
+            await action_fn.bind({ ...binding, ctx })({ ctx, data });
         }
         components.push({ ...pageObject, type: componentType });
     }
