@@ -1,6 +1,6 @@
 {
   "name": "@powerdot/telegram_bot_framework",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "",
   "main": "lib/index.js",
   "scripts": {
@@ -27,7 +27,7 @@
     "mongodb": "^4.4.1",
     "request": "^2.88.2",
     "socks-proxy-agent": "^4.0.2",
-    "telegraf": "^4.8.1"
+    "telegraf": "4.8.1"
   },
   "_moduleAliases": {
     "@": "./src"
