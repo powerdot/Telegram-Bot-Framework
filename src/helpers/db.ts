@@ -309,10 +309,11 @@ export default (
    * Находит все сообщения пользователя и бота, которые меньше определенного времени в unix timestamp
    * @param {*} unix_lim 
    */
-  async function findOldMessages(unix_lim: number) {
+  async function findOldMessages(unix_lim: number, withSpecialCommands: boolean = false) {
     let b: DatabaseMessage[] = await collection_BotMessageHistory.find<DatabaseMessage>({ "message.date": { $lte: unix_lim } }).toArray();
     let u: DatabaseMessage[] = await collection_UserMessageHistory.find<DatabaseMessage>({ "message.date": { $lte: unix_lim } }).toArray();
-    let uc: DatabaseMessage[] = await collection_specialCommandsHistory.find<DatabaseMessage>({ "message.date": { $lte: unix_lim } }).toArray();
+    let uc: DatabaseMessage[] = [];
+    if (withSpecialCommands) uc = await collection_specialCommandsHistory.find<DatabaseMessage>({ "message.date": { $lte: unix_lim } }).toArray();
     return [...b, ...u, ...uc];
   }
 
