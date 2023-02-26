@@ -7,12 +7,16 @@
     "build": "tsc && cp -r src/types lib",
     "cafe_debug": "nodemon --inspect=3592 -e ts,tsx --exec node -r ts-node/register ./examples/cafe/index.ts",
     "cafe_run": "nodemon -e ts,tsx --exec node -r ts-node/register ./examples/cafe/index.ts",
+    "cafe_serve": "ts-node ./examples/cafe/index.ts",
     "delivery_debug": "nodemon --inspect=3592 -e ts,tsx --exec node -r ts-node/register ./examples/delivery/index.ts",
     "delivery_run": "nodemon -e ts,tsx --exec node -r ts-node/register ./examples/delivery/index.ts",
+    "delivery_serve": "ts-node ./examples/delivery/index.ts",
     "game_debug": "nodemon --inspect=3592 -e ts,tsx --exec node -r ts-node/register ./examples/game/index.ts",
     "game_run": "nodemon -e ts,tsx --exec node -r ts-node/register ./examples/game/index.ts",
+    "game_serve": "ts-node ./examples/game/index.ts",
     "twithub_debug": "nodemon --inspect=3592 -e ts,tsx --exec node -r ts-node/register ./examples/twithub/index.ts",
-    "twithub_run": "nodemon -e ts,tsx --exec node -r ts-node/register ./examples/twithub/index.ts"
+    "twithub_run": "nodemon -e ts,tsx --exec node -r ts-node/register ./examples/twithub/index.ts",
+    "twithub_serve": "ts-node ./examples/twithub/index.ts"
   },
   "author": "@powerdot",
   "license": "ISC",
