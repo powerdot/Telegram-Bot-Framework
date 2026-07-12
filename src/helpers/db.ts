@@ -8,9 +8,7 @@ import {
   Telegraf,
   TBFConfig
 } from "../types"
-
-let moment = require("moment");
-let ObjectID = require('mongodb').ObjectID;
+import { ObjectId } from "mongodb";
 
 let getChatId = (ctx: TBFContext | number | string) => {
   if (typeof ctx === "number") return ctx;
@@ -75,7 +73,7 @@ export default (
   function parseQuery(query: { _id?: any } = {}) {
     let new_query = Object.assign({}, query);
     if (new_query.hasOwnProperty('_id')) {
-      new_query._id = ObjectID(new_query._id);
+      new_query._id = new ObjectId(new_query._id);
     }
     return new_query;
   }
@@ -223,7 +221,7 @@ export default (
    */
   async function _DataAdd(type: string, data: any) {
     data.type = type;
-    data.createdAt = moment();
+    data.createdAt = new Date();
     data.createdAtDate = new Date();
     await collection_Data.insertOne(data).catch(function (e) {
       console.error('db _DataAdd error', e)
@@ -239,7 +237,7 @@ export default (
   }
 
   async function _DataUpdate(_id: string, data: any) {
-    let result = await collection_Data.updateOne({ _id: new ObjectID(_id) }, { $set: data }, { upsert: true });
+    let result = await collection_Data.updateOne({ _id: new ObjectId(_id) }, { $set: data }, { upsert: true });
     return result;
   }
 

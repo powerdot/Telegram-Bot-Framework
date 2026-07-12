@@ -1,6 +1,5 @@
-/// <reference types="node" />
 import type { DB } from "./types";
-declare const _default: ({ db }: {
-    db: DB;
-}) => NodeJS.Timer;
 export default _default;
+declare function _default({ db }: {
+    db: DB;
+}): NodeJS.Timeout;

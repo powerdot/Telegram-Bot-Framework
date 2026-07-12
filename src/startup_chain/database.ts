@@ -1,4 +1,4 @@
-import { MongoClient, Collection as MongoCollection } from 'mongodb/mongodb';
+import { MongoClient, Collection as MongoCollection } from 'mongodb';
 import { MongoDataBase } from '../types';
 
 export default function ({

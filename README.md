@@ -20,6 +20,8 @@ Node.js framework based on [Telegraf](https://github.com/telegraf/telegraf) to f
 
 ### Requirements
 
+TBF 2 requires **Node.js 24 or newer**.
+
 ⚠️ **To run TBF you need to have [MongoDB](https://www.mongodb.com/) installed and running.**
 
 ### Install package
@@ -53,7 +55,7 @@ TBF({
     mongo: {
         dbName: "testbot" // provide your db name in MongoDB
     }
-}).then(({ openPage }) => {
+}).then(({ bot, openPage }) => {
     // If bot is ready, you can define own middlewares
 
     // here is one for /start command

@@ -1,6 +1,6 @@
 import { Telegraf, Markup, Context as TelegrafContext } from 'telegraf';
 import { Application as ExpressApp } from "express"
-import * as tt from 'telegraf/src/core/types/typegram';
+import * as tt from 'typegram';
 
 type TelegramMessage = tt.Message;
 
@@ -189,7 +189,7 @@ interface ComponentExport {
 }
 
 
-import { MongoClient, Collection as MongoCollection, FindCursor, WithId, Document, InsertOneResult, UpdateResult, DeleteResult, Collection } from 'mongodb/mongodb';
+import { MongoClient, Collection as MongoCollection, WithId, Document, InsertOneResult, UpdateResult, DeleteResult, Collection } from 'mongodb';
 import { Message } from 'typegram';
 interface MongoDataBase {
     client: MongoClient,
