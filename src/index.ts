@@ -20,7 +20,7 @@ import AutoRemoveMessages from "./auto_remove_messages";
 
 let path = require("path");
 
-let Create = ({ webServer, telegram, mongo, config }: TBFArgs): Promise<TBFPromiseReturn> => {
+let Create = ({ webServer, telegram, storage, mongo, config }: TBFArgs): Promise<TBFPromiseReturn> => {
 
     let cwd = process.cwd();
     let default_config = {
@@ -43,7 +43,7 @@ let Create = ({ webServer, telegram, mongo, config }: TBFArgs): Promise<TBFPromi
     if (_config.webServer?.address) _config.webServer.address = _config.webServer.address.replace('//localhost', '//127.0.0.1');
 
     return new Promise(async (resolve, reject) => {
-        StartupChain({ webServer, telegram, mongo, config: _config } as TBFArgs).then(async ({ bot, app, database }: StartupChainInstances) => {
+        StartupChain({ webServer, telegram, storage, mongo, config: _config } as TBFArgs).then(async ({ bot, app, database }: StartupChainInstances) => {
             let db: DB = DBInstance(bot, database, _config);
             let { pages, plugins }: { pages: Component[], plugins: Component[] } = PageLoader({ db, config: _config });
             let components = [...pages, ...plugins];
@@ -90,3 +90,5 @@ export {
     Create as TBF,
     ComponentInit as Component
 };
+
+export type { StorageConfig, StorageDatabase } from "./storage";

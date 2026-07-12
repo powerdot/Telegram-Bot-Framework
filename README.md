@@ -11,7 +11,7 @@ Node.js framework based on [Telegraf](https://github.com/telegraf/telegraf) to f
 
 ## Features
 * Component-like developing (pages/plugins)
-* Built-in MongoDB support (to collect user's data: routing, sessions, etc.)
+* Built-in SQLite and MongoDB storage (routing, sessions, user data, etc.)
 * Built-in Express.js support
 * Works with JS and TS
 * Supports inherit Telegram and Telegraf methods
@@ -22,7 +22,7 @@ Node.js framework based on [Telegraf](https://github.com/telegraf/telegraf) to f
 
 TBF 2 requires **Node.js 24 or newer**.
 
-⚠️ **To run TBF you need to have [MongoDB](https://www.mongodb.com/) installed and running.**
+SQLite is used by default and stores bot data in `./data/tbf.sqlite`. No external database server is required.
 
 ### Install package
 
@@ -51,9 +51,6 @@ Create **enter point** for your bot:
 TBF({
     telegram: {
         token: "xxx", // provide your token
-    },
-    mongo: {
-        dbName: "testbot" // provide your db name in MongoDB
     }
 }).then(({ bot, openPage }) => {
     // If bot is ready, you can define own middlewares
@@ -65,6 +62,35 @@ TBF({
     })
 })
 ```
+
+### Storage
+
+For a custom SQLite file:
+
+```ts
+TBF({
+    telegram: { token: "xxx" },
+    storage: {
+        driver: "sqlite",
+        filename: "./data/my-bot.sqlite"
+    }
+})
+```
+
+Use `filename: ":memory:"` for tests. For MongoDB deployments:
+
+```ts
+TBF({
+    telegram: { token: "xxx" },
+    storage: {
+        driver: "mongodb",
+        url: "mongodb://localhost:27017",
+        dbName: "my_bot"
+    }
+})
+```
+
+The previous `mongo: { url, dbName }` option remains available for compatibility, but new applications should use `storage`.
 
 So next step is create **index** page (check *Introduction to Pages* section below).
 
@@ -187,7 +213,7 @@ Run the complete pre-merge verification locally:
 npm run check
 ```
 
-The check includes TypeScript validation, unit tests with enforced coverage thresholds, a production build, and a CommonJS package smoke test. Coverage currently guards callback packing, routing helpers, component discovery, and bot middleware with minimums of 95% lines, 85% branches, and 100% functions.
+The check includes TypeScript validation, unit tests with enforced coverage thresholds, a production build, and a CommonJS package smoke test. Coverage currently guards callback packing, routing helpers, component discovery, bot middleware, and SQLite storage with minimums of 95% lines, 85% branches, and 99% functions.
 
 GitHub Actions runs the same checks on Node.js 24 for every push and pull request, and also validates the contents of the npm package with `npm pack --dry-run`.
 

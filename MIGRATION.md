@@ -5,7 +5,32 @@ TBF 2 modernizes the runtime and dependency baseline while preserving the existi
 ## Requirements
 
 - Node.js 24 or newer
-- MongoDB compatible with the MongoDB Node.js driver 7
+- No external database is required when using the default SQLite storage
+- MongoDB compatible with the MongoDB Node.js driver 7 when using the MongoDB adapter
+
+## Storage
+
+TBF 2 uses SQLite by default and creates `./data/tbf.sqlite`:
+
+```ts
+TBF({ telegram: { token } });
+```
+
+Choose the database explicitly with the new storage option:
+
+```ts
+storage: { driver: "sqlite", filename: "./data/bot.sqlite" }
+```
+
+```ts
+storage: {
+  driver: "mongodb",
+  url: "mongodb://localhost:27017",
+  dbName: "bot"
+}
+```
+
+The old `mongo` option still selects MongoDB, but is deprecated. Existing component code using `db`, `db.user.collection()`, `db.tempData`, and `db.messages` works with either adapter. SQLite implements a deliberately limited portable query subset: equality, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, sorting, and limits.
 
 ## Dependency updates
 

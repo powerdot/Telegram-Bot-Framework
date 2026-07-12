@@ -1,6 +1,7 @@
 import { Telegraf, Markup, Context as TelegrafContext } from 'telegraf';
 import { Application as ExpressApp } from "express"
 import * as tt from 'typegram';
+import type { StorageClient, StorageCollection, StorageConfig, StorageDatabase } from '../storage/types';
 
 type TelegramMessage = tt.Message;
 
@@ -191,18 +192,7 @@ interface ComponentExport {
 
 import { MongoClient, Collection as MongoCollection, WithId, Document, InsertOneResult, UpdateResult, DeleteResult, Collection } from 'mongodb';
 import { Message } from 'typegram';
-interface MongoDataBase {
-    client: MongoClient,
-    collection_UserData: MongoCollection,
-    collection_BotMessageHistory: MongoCollection,
-    collection_UserMessageHistory: MongoCollection,
-    collection_Data: MongoCollection,
-    collection_Users: MongoCollection,
-    collection_specialCommandsHistory: MongoCollection,
-    collection_UserDataCollection: MongoCollection,
-    collection_TempData: MongoCollection,
-    collection_SharedData: MongoCollection,
-}
+type MongoDataBase = StorageDatabase;
 
 interface StartupChainInstances {
     bot: Telegraf<TBFContext>;
@@ -219,18 +209,18 @@ type DatabaseMessage = {
 } | undefined
 
 type DBUserCollection = {
-    find: (query: object) => Promise<WithId<Document>>;
-    findAll: (query: object) => Promise<Array<WithId<Document>>>;
-    insert: (value: object) => Promise<InsertOneResult<Document>>;
-    update: (query: object, value: object) => Promise<UpdateResult>;
-    updateMany: (query: object, value: object) => Promise<Document | UpdateResult>;
-    delete: (query: object) => Promise<DeleteResult>;
-    deleteMany: (query: object) => Promise<DeleteResult>;
+    find: (query?: object) => Promise<Record<string, any> | null>;
+    findAll: (query?: object) => Promise<Array<Record<string, any>>>;
+    insert: (value: object) => Promise<any>;
+    update: (query: object, value: object) => Promise<any>;
+    updateMany: (query: object, value: object) => Promise<any>;
+    delete: (query: object) => Promise<any>;
+    deleteMany: (query: object) => Promise<any>;
 }
 
 interface DB {
     bot: Telegraf<TBFContext>,
-    client: MongoClient,
+    client: StorageClient,
     messages: {
         bot: {
             getLastMessage: (ctx: TBFContext | number) => Promise<DatabaseMessage>;
@@ -251,7 +241,7 @@ interface DB {
 
     tempData: {
         add: (chatId: number, messagespase: string, uniqid: string, data: any) => Promise<void>;
-        get: (messagespase: string, uniqid: string) => Promise<WithId<Document>>;
+        get: (messagespase: string, uniqid: string) => Promise<any>;
         remove: (messagespase: string) => Promise<void>;
     },
 
@@ -277,15 +267,15 @@ interface DB {
         collection: (ctx: TBFContext | number, collection_name: string) => DBUserCollection
     },
     collections: {
-        userData: Collection,
-        botMessageHistory: Collection,
-        userMessageHistory: Collection,
-        data: Collection,
-        users: Collection,
-        specialCommandsHistory: Collection,
-        userDataCollection: Collection,
-        tempData: Collection,
-        sharedData: Collection
+        userData: StorageCollection,
+        botMessageHistory: StorageCollection,
+        userMessageHistory: StorageCollection,
+        data: StorageCollection,
+        users: StorageCollection,
+        specialCommandsHistory: StorageCollection,
+        userDataCollection: StorageCollection,
+        tempData: StorageCollection,
+        sharedData: StorageCollection
     }
 }
 
@@ -332,6 +322,8 @@ interface TBFArgs {
     webServer?: {
         module: any;
     },
+    storage?: StorageConfig,
+    /** @deprecated Use storage: { driver: "mongodb", ... } instead. */
     mongo?: {
         url?: string;
         dbName: string;
@@ -384,5 +376,8 @@ export {
     ComponentAction,
     ComponentActionHandlerThisUpdateArg,
     ComponentActionHandlerThisSendArg,
-    PluginButton
+    PluginButton,
+    StorageConfig,
+    StorageDatabase,
+    StorageCollection
 }
