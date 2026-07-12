@@ -217,6 +217,24 @@ The check includes TypeScript validation, unit tests with enforced coverage thre
 
 GitHub Actions runs the same checks on Node.js 24 for every push and pull request, and also validates the contents of the npm package with `npm pack --dry-run`.
 
+### Publishing
+
+Validate exactly what would be published without changing the npm registry:
+
+```bash
+npm run release:dry-run
+```
+
+Publish manually from an authenticated npm CLI:
+
+```bash
+npm run release:publish
+```
+
+`npm publish` automatically runs `prepublishOnly`, which performs the complete `npm run check` pipeline before uploading anything. Because this is a scoped package, `publishConfig` always selects the public npm registry and public access.
+
+The `Publish to npm` GitHub Actions workflow publishes when a GitHub Release is published. Its tag must match the package version (`v2.0.0` or `2.0.0`). Configure npm Trusted Publishing for this repository and the `publish.yml` workflow before using it; the workflow uses short-lived OIDC credentials and does not require an `NPM_TOKEN` secret.
+
 
 
 ## Components

@@ -57,3 +57,7 @@ The example scripts now use `tsx` and Node.js built-in watch mode instead of `ts
 Components can subscribe to arbitrary Telegram update types through `events`. Existing `message` and `callback_query` routing remains compatible.
 
 Action handlers now expose `reply`, media helpers, `sendPoll`, `sendLocation`, `sendChatAction`, `react`, and the generic `api(method, payload)` escape hatch. The generic API method is intentionally loosely typed so applications can use a newly released Telegram method before Telegraf and TBF publish updated types.
+
+## Publishing a release
+
+Run `npm run release:dry-run` before creating a GitHub Release. Publishing a release triggers `.github/workflows/publish.yml`, verifies that the GitHub tag matches `package.json`, runs the complete prepublish check, and publishes through npm Trusted Publishing.
