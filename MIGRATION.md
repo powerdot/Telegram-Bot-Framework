@@ -51,3 +51,9 @@ npm run check
 ```
 
 The example scripts now use `tsx` and Node.js built-in watch mode instead of `ts-node` and `nodemon`.
+
+## Telegram events and API methods
+
+Components can subscribe to arbitrary Telegram update types through `events`. Existing `message` and `callback_query` routing remains compatible.
+
+Action handlers now expose `reply`, media helpers, `sendPoll`, `sendLocation`, `sendChatAction`, `react`, and the generic `api(method, payload)` escape hatch. The generic API method is intentionally loosely typed so applications can use a newly released Telegram method before Telegraf and TBF publish updated types.

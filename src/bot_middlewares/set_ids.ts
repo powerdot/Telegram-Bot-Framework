@@ -8,9 +8,19 @@ function getChatId(ctx: TBFContext) {
     // return "chat" in chat_data ? chat_data.chat.id : undefined;
 }
 
+function getSenderChatId(ctx: TBFContext) {
+    if (ctx.message && "sender_chat" in ctx.message) return ctx.message.sender_chat?.id;
+    if (ctx.callbackQuery?.message && "sender_chat" in ctx.callbackQuery.message) {
+        return ctx.callbackQuery.message.sender_chat?.id;
+    }
+    return undefined;
+}
+
 export default () => {
     return async function (ctx: TBFContext, next: Function) {
         ctx.chatId = getChatId(ctx);
+        ctx.fromId = ctx.from?.id;
+        ctx.senderChatId = getSenderChatId(ctx);
         return next();
     }
 }

@@ -19,6 +19,8 @@ type CallbackPath = {
 
 interface TBFContext extends TelegrafContext {
     chatId?: number | null
+    fromId?: number
+    senderChatId?: number
     routeTo?: string
     routing: {
         type: string
@@ -78,7 +80,8 @@ type Keyboard = Array<KeyboardRow>
 type ComponentActionHandlerThisSendArg = {
     text?: string,
     buttons?: MessageButtons,
-    keyboard?: Keyboard
+    keyboard?: Keyboard,
+    options?: Record<string, any>
 }
 
 type ComponentActionHandlerThisUpdateArg = {
@@ -104,8 +107,21 @@ type PluginButton = {
 
 interface ComponentActionHandlerThisMethods {
     send: (arg: ComponentActionHandlerThisSendArg) => Promise<any>;
+    reply: (arg: ComponentActionHandlerThisSendArg) => Promise<any>;
     update: (arg: ComponentActionHandlerThisUpdateArg) => Promise<any>;
     sendMediaGroup: (arg: ComponentActionHandlerThisSendArg & { media: any[], options?: object }) => Promise<any>;
+    sendPhoto: (arg: { photo: any, options?: Record<string, any> }) => Promise<any>;
+    sendVideo: (arg: { video: any, options?: Record<string, any> }) => Promise<any>;
+    sendAnimation: (arg: { animation: any, options?: Record<string, any> }) => Promise<any>;
+    sendAudio: (arg: { audio: any, options?: Record<string, any> }) => Promise<any>;
+    sendDocument: (arg: { document: any, options?: Record<string, any> }) => Promise<any>;
+    sendVoice: (arg: { voice: any, options?: Record<string, any> }) => Promise<any>;
+    sendSticker: (arg: { sticker: any, options?: Record<string, any> }) => Promise<any>;
+    sendLocation: (arg: { latitude: number, longitude: number, options?: Record<string, any> }) => Promise<any>;
+    sendPoll: (arg: { question: string, options: any[], extra?: Record<string, any> }) => Promise<any>;
+    sendChatAction: (action: string, options?: Record<string, any>) => Promise<any>;
+    react: (reaction: string | Record<string, any> | Array<string | Record<string, any>>, options?: Record<string, any>) => Promise<any>;
+    api: <T = any>(method: string, payload?: Record<string, any>) => Promise<T>;
     goToAction: (arg: { action: string, data?: goToData }) => Promise<any>;
     goToPage: (arg: { page: string, action?: string, data?: goToData }) => Promise<any>;
     goToComponent: (arg: { component: string, action?: string, data?: goToData, type: string }) => Promise<any>;
@@ -163,6 +179,7 @@ interface Component {
         "main": ComponentAction;
         [key: string]: ComponentAction;
     },
+    events?: Partial<Record<string, (this: ComponentActionHandlerThis, ctx: TBFContext) => any>>,
     onCallbackQuery?: (ctx: TBFContext) => Promise<any>
     onMessage?: (ctx: TBFContext) => Promise<any>
     ctx?: TBFContext

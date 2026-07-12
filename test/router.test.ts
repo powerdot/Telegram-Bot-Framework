@@ -63,3 +63,25 @@ test("router falls back to the saved step for messages", async () => {
     isMessageFromUser: true,
   });
 });
+
+test("router fans out unrouted Telegram events only to subscribed components", async () => {
+  const calls: string[] = [];
+  const db = { async getValue() { throw new Error("global events must not query a chat step"); } } as never;
+  const subscribed = {
+    id: "analytics",
+    actions: { main() {} },
+    events: { message_reaction() {} },
+    async call() { calls.push("subscribed"); },
+  } as never;
+  const ignored = {
+    id: "other",
+    actions: { main() {} },
+    events: { poll_answer() {} },
+    async call() { calls.push("ignored"); },
+  } as never;
+  const ctx = { updateType: "message_reaction", update: { message_reaction: {} } } as never;
+
+  await createRouter({ db, components: [subscribed, ignored], config: {} })(ctx, async () => calls.push("next"));
+
+  assert.deepEqual(calls, ["subscribed", "next"]);
+});

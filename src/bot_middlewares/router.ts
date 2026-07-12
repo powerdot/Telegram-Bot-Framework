@@ -7,7 +7,8 @@ export default ({ db, components, config }: { db: DB, components: Component[], c
     return async function (_ctx: TBFContext, next: Function) {
         let ctx = _ctx;
         if (config.debug) console.log('==============v')
-        let step_ = await db.getValue(ctx, 'step');
+        const isRoutableUpdate = ctx.updateType === "message" || ctx.updateType === "callback_query";
+        let step_ = isRoutableUpdate ? await db.getValue(ctx, 'step') : undefined;
         let parseCallbackPath: CallbackPath = ParseCallbackPath(ctx);
         let parseStep: any = false;
         if (step_) {
@@ -52,6 +53,9 @@ export default ({ db, components, config }: { db: DB, components: Component[], c
             } else {
                 console.error(`💔 Component with ID ${routing.component} not found.`);
             }
+        } else {
+            const eventComponents = components.filter(component => component.events?.[ctx.updateType]);
+            for (const component of eventComponents) await component.call?.(ctx);
         }
         return next();
     }

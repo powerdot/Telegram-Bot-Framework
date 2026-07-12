@@ -14,18 +14,23 @@ test("page loader builds routes, persists oversized data, and opens a page", asy
   mkdirSync(pluginsPath);
   writeFileSync(join(pagesPath, "index.js"), `
     module.exports = ({ parseButtons }) => ({
-      actions: { main({ data }) { globalThis.__tbfOpenedWith = data; } },
+      actions: { main({ data }) { globalThis.__tbfOpenedWith = data; globalThis.__tbfBinding = this; } },
+      events: {
+        message_reaction(ctx) { globalThis.__tbfReactionEvent = { ctx, binding: this }; }
+      },
       testParseButtons: parseButtons
     });
   `);
 
   const calls: Array<unknown[]> = [];
+  const apiCalls: Array<[string, Record<string, any>]> = [];
   const db = {
     tempData: {
       async add(...args: unknown[]) { calls.push(args); },
     },
     messages: {
       async removeMessages() { calls.push(["removeMessages"]); },
+      async addToRemoveMessages(...args: unknown[]) { calls.push(["track", ...args]); },
     },
     async setValue(_ctx: unknown, key: string, value: unknown) { calls.push(["setValue", key, value]); },
   } as never;
@@ -33,6 +38,17 @@ test("page loader builds routes, persists oversized data, and opens a page", asy
     chatId: 77,
     message: { message_id: 12 },
     from: { id: 77 },
+    telegram: {
+      async callApi(method: string, payload: Record<string, any>) {
+        apiCalls.push([method, payload]);
+        if (method === "sendPhoto") return { message_id: 900, from: { is_bot: true } };
+        return true;
+      },
+      async sendMessage(chatId: number, text: string, options: Record<string, any>) {
+        calls.push(["sendMessage", chatId, text, options]);
+        return { message_id: 901, from: { is_bot: true } };
+      },
+    },
   } as never;
 
   try {
@@ -62,8 +78,42 @@ test("page loader builds routes, persists oversized data, and opens a page", asy
     await page.open?.({ ctx, action: "main", data: { opened: true } });
     assert.deepEqual((globalThis as any).__tbfOpenedWith, { opened: true });
     assert.ok(calls.some(call => call[0] === "setValue" && call[1] === "step" && call[2] === "index�main"));
+
+    const binding = (globalThis as any).__tbfBinding;
+    await binding.sendPhoto({ photo: "photo-id", options: { message_thread_id: 5 } });
+    await binding.react("👍", { is_big: true });
+    await binding.sendChatAction("typing", { message_thread_id: 5 });
+    await binding.reply({ text: "Hello", options: { link_preview_options: { is_disabled: true } } });
+
+    assert.deepEqual(apiCalls[0], ["sendPhoto", {
+      chat_id: 77,
+      photo: "photo-id",
+      message_thread_id: 5,
+    }]);
+    assert.deepEqual(apiCalls[1], ["setMessageReaction", {
+      chat_id: 77,
+      message_id: 12,
+      reaction: [{ type: "emoji", emoji: "👍" }],
+      is_big: true,
+    }]);
+    assert.deepEqual(apiCalls[2], ["sendChatAction", {
+      chat_id: 77,
+      action: "typing",
+      message_thread_id: 5,
+    }]);
+    assert.ok(calls.some(call => call[0] === "track" && (call[2] as any[])[0].message_id === 900));
+    assert.ok(calls.some(call => call[0] === "sendMessage"
+      && (call[3] as any).reply_parameters.message_id === 12
+      && (call[3] as any).link_preview_options.is_disabled === true));
+
+    const reactionCtx = { updateType: "message_reaction", routing: { type: "message_reaction" } } as never;
+    await page.call?.(reactionCtx);
+    assert.equal((globalThis as any).__tbfReactionEvent.ctx, reactionCtx);
+    assert.equal((globalThis as any).__tbfReactionEvent.binding.id, "index");
   } finally {
     delete (globalThis as any).__tbfOpenedWith;
+    delete (globalThis as any).__tbfBinding;
+    delete (globalThis as any).__tbfReactionEvent;
     rmSync(root, { recursive: true, force: true });
   }
 });
