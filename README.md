@@ -172,6 +172,25 @@ You have successfully created your bot with TBF.
 
 ## TBF API
 
+## Development and tests
+
+Use Node.js 24 and install the locked dependencies:
+
+```bash
+nvm use
+npm ci
+```
+
+Run the complete pre-merge verification locally:
+
+```bash
+npm run check
+```
+
+The check includes TypeScript validation, unit tests with enforced coverage thresholds, a production build, and a CommonJS package smoke test. Coverage currently guards callback packing, routing helpers, component discovery, and bot middleware with minimums of 95% lines, 85% branches, and 100% functions.
+
+GitHub Actions runs the same checks on Node.js 24 for every push and pull request, and also validates the contents of the npm package with `npm pack --dry-run`.
+
 
 
 ## Components

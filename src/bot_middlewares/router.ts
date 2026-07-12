@@ -48,7 +48,7 @@ export default ({ db, components, config }: { db: DB, components: Component[], c
         if (routing.component) {
             let component = components.find(p => p.id == routing.component);
             if (component) {
-                component?.call?.(ctx)
+                await component.call?.(ctx)
             } else {
                 console.error(`💔 Component with ID ${routing.component} not found.`);
             }
