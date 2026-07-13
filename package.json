@@ -1,6 +1,6 @@
 {
   "name": "@powerdot/telegram_bot_framework",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "A component-oriented Telegram bot framework built on Telegraf",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

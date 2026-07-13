@@ -70,6 +70,8 @@ Set `chatActions.stopOnNavigation: true` to stop refreshing active chat actions 
 
 Page cleanup can be controlled with global `clearChatOnPageOpen`, component `clearChatOnOpen`, or transition `clearChat`. All are optional and the fallback remains `true`, preserving historical behavior. `spamProtection` is also configurable and defaults to `true`.
 
+Page cleanup is applied consistently for `openPage()`, `goToPage()`, and inline-button navigation between different components. Callback actions within the currently open component do not trigger page-level cleanup.
+
 The returned TBF application now has an idempotent `stop(signal?)` method. Automatic `SIGINT` and `SIGTERM` handling is opt-in through `gracefulShutdown.handleSignals` and defaults to `false`.
 
 `stop()` also tolerates Telegraf's `Bot is not running!` state, allowing storage-only CLI, seed, and migration processes to shut down without an `AggregateError`. Other shutdown failures are still reported.
