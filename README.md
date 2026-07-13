@@ -300,7 +300,9 @@ npm run release:publish
 
 `npm publish` automatically runs `prepublishOnly`, which performs the complete `npm run check` pipeline before uploading anything. Because this is a scoped package, `publishConfig` always selects the public npm registry and public access.
 
-The `Publish to npm` GitHub Actions workflow publishes when a GitHub Release is published. Its tag must match the package version (`v2.0.0` or `2.0.0`). Configure npm Trusted Publishing for this repository and the `publish.yml` workflow before using it; the workflow uses short-lived OIDC credentials and does not require an `NPM_TOKEN` secret.
+Every push or merge to `master` runs the `Release package` GitHub Actions workflow. The workflow reads the version from `package.json`, verifies the package, publishes a missing version to npm, and creates a GitHub Release with the matching `v<version>` tag and generated release notes. If that version and release already exist, it exits without publishing duplicates. Therefore, bump `package.json` before merging a release into `master`.
+
+Configure npm Trusted Publishing for this repository and the `publish.yml` workflow before using it. The workflow uses short-lived OIDC credentials and does not require an `NPM_TOKEN` secret. It creates the GitHub Release as a draft first and makes it public only after npm publishing succeeds. A failed run can be retried with the workflow's `Run workflow` button on `master`.
 
 
 

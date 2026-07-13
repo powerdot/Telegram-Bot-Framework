@@ -56,7 +56,7 @@ Coverage gates are enforced by Node's native test runner:
 - branches: 85%
 - functions: 99%
 
-CI is in `.github/workflows/ci.yml` and runs on Node.js 24. Publishing is in `.github/workflows/publish.yml` and is triggered by a published GitHub Release.
+CI is in `.github/workflows/ci.yml` and runs on Node.js 24. Publishing is in `.github/workflows/publish.yml` and is triggered by a push or merge to `master`.
 
 ## Compatibility policy
 
@@ -175,7 +175,8 @@ Tests must not require real Telegram credentials or a running MongoDB server. Us
 - `prepublishOnly` runs the complete check automatically.
 - `npm run release:dry-run` validates package contents without publishing.
 - `npm run release:publish` performs a real registry mutation; never run it without explicit user authorization.
-- GitHub Release tags must match `package.json` (`v2.0.0` or `2.0.0`).
+- Bump `package.json` before merging a release into `master`; the workflow creates the matching `v<version>` GitHub Release tag.
+- The workflow is idempotent: it skips npm and GitHub Release artifacts that already exist, and a failed run can be retried manually on `master`.
 - npm Trusted Publishing must be configured for `.github/workflows/publish.yml`; do not add a long-lived npm token unless explicitly required.
 
 ## Documentation and proposals

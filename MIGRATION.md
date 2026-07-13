@@ -68,4 +68,4 @@ The returned TBF application now has an idempotent `stop(signal?)` method. Autom
 
 ## Publishing a release
 
-Run `npm run release:dry-run` before creating a GitHub Release. Publishing a release triggers `.github/workflows/publish.yml`, verifies that the GitHub tag matches `package.json`, runs the complete prepublish check, and publishes through npm Trusted Publishing.
+Run `npm run release:dry-run` and bump `package.json` before merging a release into `master`. A push to `master` triggers `.github/workflows/publish.yml`, runs the complete prepublish check, publishes the missing version through npm Trusted Publishing, and creates a GitHub Release tagged `v<version>`. Existing npm versions and releases are not duplicated.
