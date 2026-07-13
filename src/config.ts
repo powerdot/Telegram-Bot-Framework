@@ -12,6 +12,9 @@ type ResolvedTBFConfig = {
     gracefulShutdown: {
         handleSignals: boolean;
     };
+    chatActions: {
+        stopOnNavigation: boolean;
+    };
     webServer: {
         port: number;
         address: string;
@@ -32,6 +35,9 @@ function resolveConfig(config: TBFConfig = {}, cwd = process.cwd()): ResolvedTBF
         debug: config.debug ?? false,
         gracefulShutdown: {
             handleSignals: config.gracefulShutdown?.handleSignals ?? false,
+        },
+        chatActions: {
+            stopOnNavigation: config.chatActions?.stopOnNavigation ?? false,
         },
         webServer: {
             port: config.webServer?.port ?? 8080,

@@ -15,7 +15,13 @@ test("page loader builds routes, persists oversized data, and opens a page", asy
   writeFileSync(join(pagesPath, "index.js"), `
     module.exports = ({ parseButtons }) => ({
       clearChatOnOpen: false,
-      actions: { main({ data }) { globalThis.__tbfOpenedWith = data; globalThis.__tbfBinding = this; } },
+      actions: {
+        main({ data }) { globalThis.__tbfOpenedWith = data; globalThis.__tbfBinding = this; },
+        generate: {
+          chatAction: "typing",
+          async handler() { globalThis.__tbfGenerated = true; }
+        }
+      },
       events: {
         message_reaction(ctx) { globalThis.__tbfReactionEvent = { ctx, binding: this }; }
       },
@@ -58,6 +64,7 @@ test("page loader builds routes, persists oversized data, and opens a page", asy
       config: {
         pages: { path: pagesPath },
         plugins: { path: pluginsPath },
+        chatActions: { stopOnNavigation: true },
         webServer: { address: "https://example.test", port: 8080 },
       },
     });
@@ -107,6 +114,40 @@ test("page loader builds routes, persists oversized data, and opens a page", asy
       action: "typing",
       message_thread_id: 5,
     }]);
+
+    const generated = await binding.withChatAction("typing", async () => "generated", {
+      message_thread_id: 5,
+      intervalDuration: 10000,
+    });
+    assert.equal(generated, "generated");
+    assert.deepEqual(apiCalls[3], ["sendChatAction", {
+      chat_id: 77,
+      action: "typing",
+      message_thread_id: 5,
+    }]);
+
+    const statusCallsBeforeRefresh = apiCalls.length;
+    await binding.withChatAction("typing", async () => {
+      await new Promise(resolve => setTimeout(resolve, 18));
+    }, { intervalDuration: 5 });
+    const statusCallsAfterRefresh = apiCalls.length;
+    assert.ok(statusCallsAfterRefresh >= statusCallsBeforeRefresh + 2);
+    await new Promise(resolve => setTimeout(resolve, 12));
+    assert.equal(apiCalls.length, statusCallsAfterRefresh);
+
+    await binding.withChatAction("typing", async () => {
+      await binding.goToAction({ action: "generate" });
+      const callsAfterNavigation = apiCalls.length;
+      await new Promise(resolve => setTimeout(resolve, 12));
+      assert.equal(apiCalls.length, callsAfterNavigation);
+    }, { intervalDuration: 5 });
+
+    await page.open?.({ ctx, action: "generate", data: undefined });
+    assert.equal((globalThis as any).__tbfGenerated, true);
+    assert.deepEqual(apiCalls.at(-1), ["sendChatAction", {
+      chat_id: 77,
+      action: "typing",
+    }]);
     assert.ok(calls.some(call => call[0] === "track" && (call[2] as any[])[0].message_id === 900));
     assert.ok(calls.some(call => call[0] === "sendMessage"
       && (call[3] as any).reply_parameters.message_id === 12
@@ -120,6 +161,7 @@ test("page loader builds routes, persists oversized data, and opens a page", asy
     delete (globalThis as any).__tbfOpenedWith;
     delete (globalThis as any).__tbfBinding;
     delete (globalThis as any).__tbfReactionEvent;
+    delete (globalThis as any).__tbfGenerated;
     rmSync(root, { recursive: true, force: true });
   }
 });

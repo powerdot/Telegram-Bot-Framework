@@ -60,6 +60,10 @@ TBF now automatically acknowledges callback queries before running their actions
 
 Action handlers now expose `reply`, media helpers, `sendPoll`, `sendLocation`, `sendChatAction`, `react`, and the generic `api(method, payload)` escape hatch. The generic API method is intentionally loosely typed so applications can use a newly released Telegram method before Telegraf and TBF publish updated types.
 
+Long-running operations can use `withChatAction("typing", callback)` to keep Telegram's activity status alive until the callback settles. An action or message handler can instead declare `chatAction: "typing"`; no status is sent unless one of these opt-in forms is used.
+
+Set `chatActions.stopOnNavigation: true` to stop refreshing active chat actions before `goToAction`, `goToPage`, `goToPlugin`, or `openPage` starts the next action. It defaults to `false` for compatibility.
+
 ## Page navigation and runtime lifecycle
 
 `await openPage()` now waits for the selected page action to finish. This fixes the previous promise contract, which resolved immediately after starting the action.

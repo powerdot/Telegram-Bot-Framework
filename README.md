@@ -378,6 +378,7 @@ Messaging
 * `this.sendPhoto()`, `sendVideo()`, `sendAnimation()`, `sendAudio()`, `sendDocument()`, `sendVoice()`, `sendSticker()` send media and register resulting messages for cleanup.
 * `this.sendLocation()` and `this.sendPoll()` send location and poll messages.
 * `this.sendChatAction("typing")` sends a chat action.
+* `this.withChatAction("typing", callback)` keeps a chat action active while an asynchronous operation runs.
 * `this.react("👍")` reacts to the current message.
 * `this.clearChat()` clears chat with user.  
 
@@ -510,12 +511,49 @@ await this.reply({
 
 await this.react(["👍", "🔥"], { is_big: true });
 
+const answer = await this.withChatAction("typing", async () => {
+    return generateAnswer();
+});
+
+await this.send({ text: answer });
+
 await this.api("sendMessageDraft", {
     chat_id: this.ctx.chatId,
     draft_id: 1,
     text: "Generating…"
 });
 ```
+
+For an entire action or message handler, the same behavior can be declared without a wrapper:
+
+```ts
+actions: {
+    generate: {
+        chatAction: "typing",
+        async handler() {
+            const answer = await generateAnswer();
+            await this.send({ text: answer });
+        }
+    }
+}
+```
+
+`chatAction` is opt-in and defaults to `undefined`, preserving the previous behavior. TBF refreshes the status every four seconds and always stops the timer when the operation completes or throws.
+
+To also stop the current status immediately when navigating to another action, page, or plugin, enable navigation tracking:
+
+```ts
+TBF({
+    telegram: { token },
+    config: {
+        chatActions: {
+            stopOnNavigation: true
+        }
+    }
+});
+```
+
+The option defaults to `false`. Telegram Bot API has no explicit cancel operation: TBF stops refreshing the status, and Telegram removes it within five seconds or as soon as the bot sends a new message.
 
 ### Combine callback and message handlers.
 

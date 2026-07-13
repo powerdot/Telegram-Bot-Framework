@@ -15,6 +15,7 @@ test("config defaults preserve historical TBF behavior", () => {
     spamProtection: true,
     debug: false,
     gracefulShutdown: { handleSignals: false },
+    chatActions: { stopOnNavigation: false },
     webServer: { port: 8080, address: "" },
   });
 });
@@ -25,12 +26,14 @@ test("config preserves explicit false values and merges nested defaults", () => 
     clearChatOnPageOpen: false,
     spamProtection: false,
     gracefulShutdown: { handleSignals: false },
+    chatActions: { stopOnNavigation: true },
     webServer: { address: "http://localhost:3000" } as never,
   }, "/tmp/tbf-app");
 
   assert.equal(config.autoRemoveMessages, false);
   assert.equal(config.clearChatOnPageOpen, false);
   assert.equal(config.spamProtection, false);
+  assert.equal(config.chatActions.stopOnNavigation, true);
   assert.deepEqual(config.webServer, {
     port: 8080,
     address: "http://127.0.0.1:3000",
