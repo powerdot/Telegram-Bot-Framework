@@ -6,23 +6,19 @@ import test from "node:test";
 
 import loadPages from "../src/page_loader";
 
-function callbackContext(step: string, component: string) {
+function routing(step: string, component: string) {
   return {
-    chatId: 77,
-    updateType: "callback_query",
-    routing: {
-      type: "callback_query",
-      component,
-      action: "main",
-      data: undefined,
-      step,
-      message: undefined,
-      isMessageFromUser: false,
-    },
-  } as never;
+    type: "callback_query",
+    component,
+    action: "main",
+    data: undefined,
+    step,
+    message: undefined,
+    isMessageFromUser: false,
+  };
 }
 
-test("page cleanup is consistent across programmatic and callback navigation", async () => {
+test("callback and goToPage navigation preserve the message used by update", async () => {
   const root = mkdtempSync(join(tmpdir(), "tbf-navigation-"));
   const pagesPath = join(root, "pages");
   const pluginsPath = join(root, "plugins");
@@ -36,35 +32,31 @@ test("page cleanup is consistent across programmatic and callback navigation", a
       }
     });
   `);
-  writeFileSync(join(pagesPath, "progress.js"), `
+  writeFileSync(join(pagesPath, "target.js"), `
     module.exports = () => ({
       actions: {
-        main() {
-          globalThis.__tbfNavigationOrder.push("progress");
-          return "progress-result";
-        }
-      }
-    });
-  `);
-  writeFileSync(join(pagesPath, "settings.js"), `
-    module.exports = () => ({
-      clearChatOnOpen: false,
-      actions: {
-        main() { globalThis.__tbfNavigationOrder.push("settings"); }
+        main() { return this.update({ text: "Target" }); }
       }
     });
   `);
 
-  const order: string[] = [];
+  let removals = 0;
+  let edits = 0;
   const db = {
     messages: {
-      async removeMessages() { order.push("remove"); },
+      async removeMessages() { removals += 1; },
     },
-    async setValue(_ctx: unknown, key: string, value: unknown) {
-      if (key === "step") order.push(`step:${value}`);
+    async setValue() {},
+  } as never;
+  const ctx = {
+    chatId: 77,
+    updateType: "callback_query",
+    routing: routing("source�main", "source"),
+    async editMessageText() {
+      edits += 1;
+      return true;
     },
   } as never;
-  (globalThis as any).__tbfNavigationOrder = order;
 
   try {
     const { pages } = loadPages({
@@ -76,59 +68,21 @@ test("page cleanup is consistent across programmatic and callback navigation", a
       },
     });
     const source = pages.find(page => page.id === "source")!;
-    const progress = pages.find(page => page.id === "progress")!;
-    const settings = pages.find(page => page.id === "settings")!;
-    const sourceCtx = { chatId: 77 } as never;
+    const target = pages.find(page => page.id === "target")!;
 
-    await source.open?.({ ctx: sourceCtx, action: "main", data: undefined });
+    await source.open?.({ ctx, action: "main", data: undefined });
     const sourceBinding = (globalThis as any).__tbfSourceBinding;
 
-    order.length = 0;
-    const result = await sourceBinding.goToPage({ page: "progress", action: "main" });
-    assert.equal(result, "progress-result");
-    assert.deepEqual(order, ["remove", "step:progress�main", "progress"]);
+    await sourceBinding.goToPage({ page: "target", action: "main" });
+    assert.equal(removals, 0);
+    assert.equal(edits, 1);
 
-    order.length = 0;
-    await sourceBinding.goToPage({ page: "settings", action: "main" });
-    assert.deepEqual(order, ["step:settings�main", "settings"]);
-
-    order.length = 0;
-    await progress.call?.(callbackContext("source�main", "progress"));
-    assert.deepEqual(order, ["remove", "step:progress�main", "progress"]);
-
-    order.length = 0;
-    await progress.call?.(callbackContext("progress�details", "progress"));
-    assert.deepEqual(order, ["step:progress�main", "progress"]);
-
-    order.length = 0;
-    await settings.call?.(callbackContext("progress�main", "settings"));
-    assert.deepEqual(order, ["step:settings�main", "settings"]);
-
-    const noCleanupOrder: string[] = [];
-    (globalThis as any).__tbfNavigationOrder = noCleanupOrder;
-    const noCleanupDb = {
-      messages: {
-        async removeMessages() { noCleanupOrder.push("remove"); },
-      },
-      async setValue(_ctx: unknown, key: string, value: unknown) {
-        if (key === "step") noCleanupOrder.push(`step:${value}`);
-      },
-    } as never;
-    const { pages: pagesWithoutGlobalCleanup } = loadPages({
-      db: noCleanupDb,
-      config: {
-        pages: { path: pagesPath },
-        plugins: { path: pluginsPath },
-        clearChatOnPageOpen: false,
-      },
-    });
-    const progressWithoutGlobalCleanup = pagesWithoutGlobalCleanup.find(page => page.id === "progress")!;
-
-    await progressWithoutGlobalCleanup.call?.(callbackContext("source�main", "progress"));
-    assert.deepEqual(noCleanupOrder, ["step:progress�main", "progress"]);
+    (ctx as any).routing = routing("source�main", "target");
+    await target.call?.(ctx);
+    assert.equal(removals, 0);
+    assert.equal(edits, 2);
   } finally {
     delete (globalThis as any).__tbfSourceBinding;
-    delete (globalThis as any).__tbfNavigationOrder;
     rmSync(root, { recursive: true, force: true });
   }
 });

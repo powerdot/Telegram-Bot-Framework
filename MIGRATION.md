@@ -70,7 +70,7 @@ Set `chatActions.stopOnNavigation: true` to stop refreshing active chat actions 
 
 Page cleanup can be controlled with global `clearChatOnPageOpen`, component `clearChatOnOpen`, or transition `clearChat`. All are optional and the fallback remains `true`, preserving historical behavior. `spamProtection` is also configurable and defaults to `true`.
 
-Page cleanup is applied consistently for `openPage()`, `goToPage()`, and inline-button navigation between different components. Callback actions within the currently open component do not trigger page-level cleanup.
+Inline callback routing, `goToPage()`, and `goToPlugin()` preserve the current message so target actions can replace it with `update()`. Page-level cleanup remains part of explicit `openPage()` lifecycle; actions can still request cleanup through their existing `clearChat` behavior.
 
 The returned TBF application now has an idempotent `stop(signal?)` method. Automatic `SIGINT` and `SIGTERM` handling is opt-in through `gracefulShutdown.handleSignals` and defaults to `false`.
 
