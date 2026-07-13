@@ -18,6 +18,7 @@ import Middleware_Router from "./bot_middlewares/router";
 
 import AutoRemoveMessages from "./auto_remove_messages";
 import { resolveConfig } from "./config";
+import { stopBot } from "./helpers/stop_bot";
 
 let Create = async ({ webServer, telegram, storage, mongo, config }: TBFArgs): Promise<TBFPromiseReturn> => {
     const resolvedConfig = resolveConfig(config);
@@ -52,7 +53,7 @@ let Create = async ({ webServer, telegram, storage, mongo, config }: TBFArgs): P
         process.removeListener("SIGTERM", handleSignal);
         if (autoRemoveTimer) clearInterval(autoRemoveTimer);
         try {
-            bot.stop(signal);
+            stopBot(bot, signal);
         } catch (error) {
             errors.push(error);
         }

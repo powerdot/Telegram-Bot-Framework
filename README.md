@@ -141,6 +141,8 @@ The page and plugin loader accepts callable CommonJS exports from `.js`, `.cjs`,
 
 TBF returns an idempotent `stop()` method that stops Telegraf, the message cleanup timer and HTTP server, then closes storage:
 
+Stopping is safe when Telegraf polling is already inactive. TBF still closes the HTTP server and storage client, while unexpected Telegraf shutdown errors continue to be reported.
+
 ```ts
 const app = await TBF({ telegram: { token } });
 
