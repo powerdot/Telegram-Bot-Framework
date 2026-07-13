@@ -135,6 +135,8 @@ The priority is transition option, page option, global config, and finally the c
 
 `await openPage()` waits until the selected page action completes.
 
+The page and plugin loader accepts callable CommonJS exports from `.js`, `.cjs`, `.ts`, and `.cts` entries, including directory entry points. TypeScript declarations, source maps, JSON, documentation, and other build assets are ignored, so applications do not need to disable `.d.ts` or source-map output inside their compiled page directories.
+
 ### Graceful shutdown
 
 TBF returns an idempotent `stop()` method that stops Telegraf, the message cleanup timer and HTTP server, then closes storage:
