@@ -56,6 +56,8 @@ The example scripts now use `tsx` and Node.js built-in watch mode instead of `ts
 
 Components can subscribe to arbitrary Telegram update types through `events`. Existing `message` and `callback_query` routing remains compatible.
 
+TBF now automatically acknowledges callback queries before running their actions. This clears Telegram's inline-button loading indicator before a page edits the message or replaces its keyboard. Expired callback acknowledgements are ignored and do not prevent routing.
+
 Action handlers now expose `reply`, media helpers, `sendPoll`, `sendLocation`, `sendChatAction`, `react`, and the generic `api(method, payload)` escape hatch. The generic API method is intentionally loosely typed so applications can use a newly released Telegram method before Telegraf and TBF publish updated types.
 
 ## Page navigation and runtime lifecycle
