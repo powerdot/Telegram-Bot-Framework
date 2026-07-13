@@ -7,6 +7,13 @@ export default ({ db, components, config }: { db: DB, components: Component[], c
     return async function (_ctx: TBFContext, next: Function) {
         let ctx = _ctx;
         if (config.debug) console.log('==============v')
+        if (ctx.updateType === "callback_query") {
+            try {
+                await ctx.answerCbQuery();
+            } catch (error) {
+                if (config.debug) console.warn("[router] Unable to answer callback query:", error);
+            }
+        }
         const isRoutableUpdate = ctx.updateType === "message" || ctx.updateType === "callback_query";
         let step_ = isRoutableUpdate ? await db.getValue(ctx, 'step') : undefined;
         let parseCallbackPath: CallbackPath = ParseCallbackPath(ctx);

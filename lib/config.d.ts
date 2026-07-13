@@ -13,6 +13,9 @@ type ResolvedTBFConfig = {
     gracefulShutdown: {
         handleSignals: boolean;
     };
+    chatActions: {
+        stopOnNavigation: boolean;
+    };
     webServer: {
         port: number;
         address: string;

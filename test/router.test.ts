@@ -21,6 +21,7 @@ test("router dispatches callback data and waits for the component", async () => 
     updateType: "callback_query",
     update: { callback_query: { data: "catalog�open�N42" } },
     callbackQuery: { data: "catalog�open�N42" },
+    async answerCbQuery() { order.push("answer"); },
   } as never;
 
   await createRouter({ db, components: [component], config: {} })(ctx, async () => {
@@ -36,7 +37,27 @@ test("router dispatches callback data and waits for the component", async () => 
     message: undefined,
     isMessageFromUser: false,
   });
-  assert.deepEqual(order, ["component", "next"]);
+  assert.deepEqual(order, ["answer", "component", "next"]);
+});
+
+test("router continues when an expired callback query cannot be answered", async () => {
+  let routed = false;
+  const db = { async getValue() { return undefined; } } as never;
+  const component = {
+    id: "catalog",
+    actions: { main() {} },
+    async call() { routed = true; },
+  } as never;
+  const ctx = {
+    updateType: "callback_query",
+    update: { callback_query: { data: "catalog�main" } },
+    callbackQuery: { data: "catalog�main" },
+    async answerCbQuery() { throw new Error("query is too old"); },
+  } as never;
+
+  await createRouter({ db, components: [component], config: {} })(ctx, async () => undefined);
+
+  assert.equal(routed, true);
 });
 
 test("router falls back to the saved step for messages", async () => {
