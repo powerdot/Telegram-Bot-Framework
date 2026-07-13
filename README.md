@@ -371,7 +371,7 @@ You can use them inside functions declared in Component or in actions.
 ### Component's action methods  
 Routing  
 * `this.goToAction({action, data?})` sends user to action inside your component.
-* `this.goToPage({page, action?, data?})` opens a page and applies its `clearChatOnOpen`/global cleanup policy.
+* `this.goToPage({page, action?, data?})` routes to a page while preserving the current callback message for `update()`.
 * `this.goToPlugin({page, action?, data?})` it's like `goToPage()` but it sends user to plugin.  
 
 Messaging  
