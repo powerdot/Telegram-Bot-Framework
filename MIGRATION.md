@@ -72,6 +72,8 @@ Page cleanup can be controlled with global `clearChatOnPageOpen`, component `cle
 
 The returned TBF application now has an idempotent `stop(signal?)` method. Automatic `SIGINT` and `SIGTERM` handling is opt-in through `gracefulShutdown.handleSignals` and defaults to `false`.
 
+`stop()` also tolerates Telegraf's `Bot is not running!` state, allowing storage-only CLI, seed, and migration processes to shut down without an `AggregateError`. Other shutdown failures are still reported.
+
 ## Publishing a release
 
 Run `npm run release:dry-run` and bump `package.json` before merging a release into `master`. A push to `master` triggers `.github/workflows/publish.yml`, runs the complete prepublish check, publishes the missing version through npm Trusted Publishing, and creates a GitHub Release tagged `v<version>`. Existing npm versions and releases are not duplicated.
