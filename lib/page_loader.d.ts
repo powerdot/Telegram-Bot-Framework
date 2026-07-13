@@ -1,4 +1,4 @@
-import type { Component, DB, TBFConfig, PaginatorReturn } from "./types";
+import type { TBFContext, Component, DB, TBFConfig, PaginatorReturn } from "./types";
 export default _default;
 declare function _default({ db, config }: {
     db: DB;
@@ -7,4 +7,5 @@ declare function _default({ db, config }: {
     pages: Component[];
     plugins: Component[];
     paginator: PaginatorReturn;
+    stopChatActions: (ctx: TBFContext) => void;
 };

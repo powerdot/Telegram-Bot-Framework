@@ -91,6 +91,11 @@ type ComponentActionHandlerThisUpdateArg = {
     keyboard?: Keyboard
 }
 
+type ChatAction = Parameters<TelegrafContext["sendChatAction"]>[0];
+type ChatActionOptions = Record<string, any> & {
+    intervalDuration?: number;
+};
+
 type goToData = any;
 type pluginGoToData = {
     callback?: {
@@ -120,7 +125,8 @@ interface ComponentActionHandlerThisMethods {
     sendSticker: (arg: { sticker: any, options?: Record<string, any> }) => Promise<any>;
     sendLocation: (arg: { latitude: number, longitude: number, options?: Record<string, any> }) => Promise<any>;
     sendPoll: (arg: { question: string, options: any[], extra?: Record<string, any> }) => Promise<any>;
-    sendChatAction: (action: string, options?: Record<string, any>) => Promise<any>;
+    sendChatAction: (action: ChatAction, options?: Record<string, any>) => Promise<any>;
+    withChatAction: <T>(action: ChatAction, callback: () => Promise<T> | T, options?: ChatActionOptions) => Promise<T>;
     react: (reaction: string | Record<string, any> | Array<string | Record<string, any>>, options?: Record<string, any>) => Promise<any>;
     api: <T = any>(method: string, payload?: Record<string, any>) => Promise<T>;
     goToAction: (arg: { action: string, data?: goToData }) => Promise<any>;
@@ -155,19 +161,27 @@ type ComponentActionHandlerThis = {
 interface ComponentActionMessageHandler {
     (this: ComponentActionHandlerThis, arg: ComponentActionArg): any;
     clearChat?: boolean;
+    chatAction?: ChatAction;
+    chatActionOptions?: ChatActionOptions;
 }
 
 interface ComponentActionHandler {
     (this: ComponentActionHandlerThis, arg: ComponentActionArg): any;
     clearChat?: boolean;
+    chatAction?: ChatAction;
+    chatActionOptions?: ChatActionOptions;
     messageHandler?: ComponentActionMessageHandler;
 }
 
 type ComponentAction = ComponentActionHandler | {
     clearChat?: boolean;
+    chatAction?: ChatAction;
+    chatActionOptions?: ChatActionOptions;
     handler: ComponentActionHandler;
     messageHandler?: ComponentActionMessageHandler | {
         clearChat?: boolean;
+        chatAction?: ChatAction;
+        chatActionOptions?: ChatActionOptions;
         handler: ComponentActionMessageHandler;
     }
 }
@@ -334,6 +348,9 @@ interface TBFConfig {
     gracefulShutdown?: {
         handleSignals?: boolean;
     };
+    chatActions?: {
+        stopOnNavigation?: boolean;
+    };
     webServer?: {
         port: any;
         address: string;
@@ -405,5 +422,7 @@ export {
     PluginButton,
     StorageConfig,
     StorageDatabase,
-    StorageCollection
+    StorageCollection,
+    ChatAction,
+    ChatActionOptions
 }

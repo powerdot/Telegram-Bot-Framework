@@ -10,6 +10,8 @@ import type {
     PaginatorComponent,
     ParseButtons,
     ParseButtonsReturn,
+    ChatAction,
+    ChatActionOptions,
 } from "./types"
 
 import dataPacker from "./data_packer"
@@ -20,14 +22,20 @@ type loaderArgs = {
     config: TBFConfig,
     inputComponents: PaginatorComponent[],
     componentType: string,
-    loadedComponents: Component[]
+    loadedComponents: Component[];
+    chatActionManager: ChatActionManager;
 }
 
 type loaderReturn = {
     components: Component[]
 }
 
-function loader({ db, config, inputComponents, componentType, loadedComponents }: loaderArgs): loaderReturn {
+type ChatActionManager = {
+    register(ctx: TBFContext, stop: () => void): () => void;
+    stop(ctx: TBFContext): void;
+}
+
+function loader({ db, config, inputComponents, componentType, loadedComponents, chatActionManager }: loaderArgs): loaderReturn {
     async function sendApiMessage(binding: ComponentActionHandlerThis, method: string, payload: Record<string, any>) {
         const result = await binding.api(method, payload);
         const messages = Array.isArray(result) ? result : [result];
@@ -110,6 +118,16 @@ function loader({ db, config, inputComponents, componentType, loadedComponents }
     function extractHandler(action): ComponentActionHandler {
         let action_fn = typeof action == "function" ? action : action.handler;
         return action_fn;
+    }
+
+    async function runAction<T>(
+        action: { chatAction?: ChatAction, chatActionOptions?: ChatActionOptions },
+        actionBinding: ComponentActionHandlerThis,
+        callback: () => Promise<T> | T,
+    ): Promise<T> {
+        const chatAction = action?.chatAction;
+        if (!chatAction) return callback();
+        return actionBinding.withChatAction(chatAction, async () => callback(), action.chatActionOptions);
     }
 
     let components: Component[] = [];
@@ -215,6 +233,27 @@ function loader({ db, config, inputComponents, componentType, loadedComponents }
             async sendChatAction(this: ComponentActionHandlerThis, action, options = {}) {
                 return this.api("sendChatAction", { chat_id: this.ctx.chatId, action, ...options });
             },
+            async withChatAction<T>(this: ComponentActionHandlerThis, action: ChatAction, callback: () => Promise<T> | T, options: ChatActionOptions = {}): Promise<T> {
+                const { intervalDuration = 4000, ...apiOptions } = options;
+                const sendStatus = async () => {
+                    try {
+                        await this.sendChatAction(action, apiOptions);
+                    } catch (error) {
+                        if (config.debug) console.warn("[withChatAction] Unable to send chat action:", error);
+                    }
+                };
+
+                await sendStatus();
+                const timer = setInterval(sendStatus, intervalDuration);
+                timer.unref?.();
+                const unregister = chatActionManager.register(this.ctx, () => clearInterval(timer));
+                try {
+                    return await callback();
+                } finally {
+                    clearInterval(timer);
+                    unregister();
+                }
+            },
             async react(this: ComponentActionHandlerThis, reaction, options = {}) {
                 const messageId = this.ctx.message?.message_id ?? this.ctx.callbackQuery?.message?.message_id;
                 if (!messageId) throw new Error("react() requires a message context or message_id");
@@ -294,10 +333,14 @@ function loader({ db, config, inputComponents, componentType, loadedComponents }
                 let _this: ComponentActionHandlerThis = this;
                 let found_component = loadedComponents.find(x => x.id == component && x.type == type);
                 if (found_component) {
+                    if (config.chatActions?.stopOnNavigation) chatActionManager.stop(_this.ctx);
                     await db.setValue(_this.ctx, "step", component + "�" + action);
                     let action_fn = extractHandler(found_component.actions[action]);
                     try {
-                        return await action_fn.bind({ ..._this, ...{ id: component } })({ ctx: _this.ctx, data });
+                        const actionBinding = { ..._this, ...{ id: component } };
+                        return await runAction(found_component.actions[action], actionBinding, () =>
+                            action_fn.bind(actionBinding)({ ctx: _this.ctx, data })
+                        );
                     } catch (error) {
                         console.error("goToComponent error", error);
                         return null;
@@ -317,10 +360,14 @@ function loader({ db, config, inputComponents, componentType, loadedComponents }
                 let current_page = loadedComponents.find(x => x.id == _this.id);
                 let page_action = current_page.actions[action];
                 if (page_action) {
+                    if (config.chatActions?.stopOnNavigation) chatActionManager.stop(_this.ctx);
                     await db.setValue(_this.ctx, "step", _this.id + "�" + action);
                     let action_fn = extractHandler(page_action);
                     try {
-                        return await action_fn.bind({ ..._this, ...{ id: _this.id } })({ ctx: _this.ctx, data });
+                        const actionBinding = { ..._this, ...{ id: _this.id } };
+                        return await runAction(page_action, actionBinding, () =>
+                            action_fn.bind(actionBinding)({ ctx: _this.ctx, data })
+                        );
                     } catch (error) {
                         console.error("goToAction error", error);
                         return null;
@@ -425,6 +472,9 @@ function loader({ db, config, inputComponents, componentType, loadedComponents }
                     async sendChatAction(action, options) {
                         return binding.sendChatAction.bind(userBinding)(action, options);
                     },
+                    async withChatAction(action, callback, options) {
+                        return binding.withChatAction.bind(userBinding)(action, callback, options);
+                    },
                     async react(reaction, options) {
                         return binding.react.bind(userBinding)(reaction, options);
                     },
@@ -454,7 +504,10 @@ function loader({ db, config, inputComponents, componentType, loadedComponents }
                         if (action.clearChat) await db.messages.removeMessages(ctx);
                         let action_fn = extractHandler(action);
                         await db.setValue(ctx, "step", pageObject.id + "�" + ctx_action);
-                        await action_fn.bind({ ...binding, ctx })({ ctx, data: ctx.routing.data });
+                        const actionBinding = { ...binding, ctx };
+                        await runAction(action, actionBinding, () =>
+                            action_fn.bind(actionBinding)({ ctx, data: ctx.routing.data })
+                        );
                     } else {
                         throw ("action not found: " + ctx_action);
                     }
@@ -478,25 +531,27 @@ function loader({ db, config, inputComponents, componentType, loadedComponents }
                             await db.setValue(ctx, "from", ctx.from);
                         }
                         let handler_fn = extractHandler(handler);
-                        let result = await handler_fn.bind({ ...binding, ctx })({
-                            ctx,
-                            text: "text" in ctx.message ? ctx.message.text : undefined,
-                            photo: "photo" in ctx.message ? ctx.message.photo : undefined,
-                            video: "video" in ctx.message ? ctx.message.video : undefined,
-                            animation: "animation" in ctx.message ? ctx.message.animation : undefined,
-                            document: "document" in ctx.message ? ctx.message.document : undefined,
-                            voice: "voice" in ctx.message ? ctx.message.voice : undefined,
-                            audio: "audio" in ctx.message ? ctx.message.audio : undefined,
-                            poll: "poll" in ctx.message ? ctx.message.poll : undefined,
-                            sticker: "sticker" in ctx.message ? ctx.message.sticker : undefined,
-                            location: "location" in ctx.message ? ctx.message.location : undefined,
-                            contact: "contact" in ctx.message ? ctx.message.contact : undefined,
-                            venue: "venue" in ctx.message ? ctx.message.venue : undefined,
-                            game: "game" in ctx.message ? ctx.message.game : undefined,
-                            invoice: "invoice" in ctx.message ? ctx.message.invoice : undefined,
-                            dice: "dice" in ctx.message ? ctx.message.dice : undefined,
-                            caption: "caption" in ctx.message ? ctx.message.caption : undefined,
-                        });
+                        const actionBinding = { ...binding, ctx };
+                        let result = await runAction(handler, actionBinding, () => handler_fn.bind(actionBinding)({
+                                ctx,
+                                text: "text" in ctx.message ? ctx.message.text : undefined,
+                                photo: "photo" in ctx.message ? ctx.message.photo : undefined,
+                                video: "video" in ctx.message ? ctx.message.video : undefined,
+                                animation: "animation" in ctx.message ? ctx.message.animation : undefined,
+                                document: "document" in ctx.message ? ctx.message.document : undefined,
+                                voice: "voice" in ctx.message ? ctx.message.voice : undefined,
+                                audio: "audio" in ctx.message ? ctx.message.audio : undefined,
+                                poll: "poll" in ctx.message ? ctx.message.poll : undefined,
+                                sticker: "sticker" in ctx.message ? ctx.message.sticker : undefined,
+                                location: "location" in ctx.message ? ctx.message.location : undefined,
+                                contact: "contact" in ctx.message ? ctx.message.contact : undefined,
+                                venue: "venue" in ctx.message ? ctx.message.venue : undefined,
+                                game: "game" in ctx.message ? ctx.message.game : undefined,
+                                invoice: "invoice" in ctx.message ? ctx.message.invoice : undefined,
+                                dice: "dice" in ctx.message ? ctx.message.dice : undefined,
+                                caption: "caption" in ctx.message ? ctx.message.caption : undefined,
+                            })
+                        );
                         if (typeof result === "boolean") {
                             if (!result) {
                                 await db.messages.removeMessages(ctx, true);
@@ -534,7 +589,10 @@ function loader({ db, config, inputComponents, componentType, loadedComponents }
             const shouldClearChat = clearChat ?? pageObject.clearChatOnOpen ?? config.clearChatOnPageOpen ?? true;
             if (shouldClearChat) await db.messages.removeMessages(ctx);
             await db.setValue(ctx, "step", pageObject.id + "�" + act);
-            await action_fn.bind({ ...binding, ctx })({ ctx, data });
+            const actionBinding = { ...binding, ctx };
+            await runAction(pageObject.actions[act], actionBinding, () =>
+                action_fn.bind(actionBinding)({ ctx, data })
+            );
         }
         components.push({ ...pageObject, type: componentType });
     }
@@ -547,16 +605,34 @@ export default (
 ) => {
     let loadedComponents: Component[] = [];
     let paginator: PaginatorReturn = Paginator({ config });
+    const activeChatActions = new WeakMap<TBFContext, Set<() => void>>();
+    const chatActionManager: ChatActionManager = {
+        register(ctx, stop) {
+            const stops = activeChatActions.get(ctx) ?? new Set();
+            stops.add(stop);
+            activeChatActions.set(ctx, stops);
+            return () => {
+                stops.delete(stop);
+                if (stops.size === 0) activeChatActions.delete(ctx);
+            };
+        },
+        stop(ctx) {
+            const stops = activeChatActions.get(ctx);
+            if (!stops) return;
+            activeChatActions.delete(ctx);
+            for (const stop of stops) stop();
+        },
+    };
 
     let pages_components = paginator.list("pages")
-    let pages = loader({ db, config, inputComponents: pages_components, componentType: 'page', loadedComponents }).components;
+    let pages = loader({ db, config, inputComponents: pages_components, componentType: 'page', loadedComponents, chatActionManager }).components;
     loadedComponents.push(...pages);
     console.log("✅", `Loader: ${pages.length} ${pages.length == 1 ? 'page' : 'pages'} loaded!`);
 
     let plugins_components = paginator.list("plugins")
-    let plugins = loader({ db, config, inputComponents: plugins_components, componentType: 'plugin', loadedComponents }).components;
+    let plugins = loader({ db, config, inputComponents: plugins_components, componentType: 'plugin', loadedComponents, chatActionManager }).components;
     loadedComponents.push(...plugins);
     console.log("✅", `Loader: ${plugins.length} ${plugins.length == 1 ? 'plugin' : 'plugins'} loaded!`);
 
-    return { pages, plugins, paginator };
+    return { pages, plugins, paginator, stopChatActions: chatActionManager.stop };
 }

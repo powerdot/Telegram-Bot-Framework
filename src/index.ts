@@ -29,7 +29,7 @@ let Create = async ({ webServer, telegram, storage, mongo, config }: TBFArgs): P
         config: resolvedConfig,
     } as TBFArgs);
     const db: DB = DBInstance(bot, database, resolvedConfig);
-    const { pages, plugins }: { pages: Component[], plugins: Component[] } = PageLoader({ db, config: resolvedConfig });
+    const { pages, plugins, stopChatActions } = PageLoader({ db, config: resolvedConfig });
     const components = [...pages, ...plugins];
 
     bot.use(Middleware_SetIds());
@@ -92,6 +92,7 @@ let Create = async ({ webServer, telegram, storage, mongo, config }: TBFArgs): P
         async openPage({ ctx, page, data, action = "main", clearChat }) {
             const foundPage = components.find(component => component.id === page);
             if (!foundPage) throw new Error("Component not found: " + page);
+            if (resolvedConfig.chatActions.stopOnNavigation) stopChatActions(ctx);
             await foundPage.open?.({ ctx, data, action, clearChat });
             return true;
         },
