@@ -32,8 +32,7 @@ TWITHUB_PORT=8383
 MONGO_URL=mongodb://localhost:27017/
 ```
 6. Fill `.env` file with your data and tokens
-7. Make sure that MongoDB is running.
-8. Run bot by `npm run SCRIPTNAME` command
+7. Run bot by `npm run game_serve` or `npm run game_run`. The example uses the default SQLite storage in `./data/tbf.sqlite`; MongoDB is not required.
 You can find scripts [here](https://github.com/powerdot/Telegram-Bot-Framework/blob/master/package.json).  
 Look for `[bot]_run` script to run bot and `[bot]_debug` to debug it with Chrome console.  
 8.1. Chrome debug available on `chrome://inspect`

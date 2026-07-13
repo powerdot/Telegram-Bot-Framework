@@ -21,6 +21,7 @@ Generic middleware hooks or reusable concurrency primitives may belong in core, 
 - Source: TypeScript in `src/`
 - `lib/` is generated and tracked. Change `src/`, then run the build; do not hand-edit generated files.
 - Telegraf remains the Telegram transport for 2.0. Do not replace it without an explicit transport-adapter migration plan.
+- Telegraf long-polling `bot.launch()` remains pending until polling stops. TBF startup must resolve from Telegraf's `onLaunch` callback, not by awaiting the polling Promise. Keep the regression test in `test/bot_startup.test.ts`.
 
 Important dependencies:
 
@@ -121,6 +122,8 @@ Components can subscribe to arbitrary Telegraf update types through `events`. Un
 Action bindings expose convenience methods for replies, media, polls, locations, reactions and chat actions. `this.api(method, payload)` is the forward-compatible escape hatch for Telegram methods not yet covered by Telegraf/TBF types.
 
 Telegraf exposes much of Telegram through `ctx`; avoid duplicating every Bot API method in TBF. Add convenience methods only when they integrate with TBF behavior such as message tracking, page navigation or normalized context.
+
+Never log the complete Telegraf context or Telegram client: it contains the bot token. Debug logs must use explicit allowlisted fields such as update ID/type, `chatId`, `fromId` and `senderChatId`.
 
 ## Storage
 

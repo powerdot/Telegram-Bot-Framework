@@ -43,7 +43,13 @@ export default ({ db, components, config }: { db: DB, components: Component[], c
         if (config.debug) console.log("[router] Route", routing);
         if (config.debug) console.log("[router] ParseCallbackPath", parseCallbackPath);
         if (config.debug) console.log("[router] ParseStep", parseStep);
-        if (config.debug) console.log("[router] ctx", ctx);
+        if (config.debug) console.log("[router] Context", {
+            updateId: ctx.update?.update_id,
+            updateType: ctx.updateType,
+            chatId: ctx.chatId,
+            fromId: ctx.fromId,
+            senderChatId: ctx.senderChatId,
+        });
         if (config.debug) console.log('==============');
 
         if (routing.component) {

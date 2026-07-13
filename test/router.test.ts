@@ -85,3 +85,25 @@ test("router fans out unrouted Telegram events only to subscribed components", a
 
   assert.deepEqual(calls, ["subscribed", "next"]);
 });
+
+test("router debug output never logs the Telegram client or token", async () => {
+  const output: unknown[][] = [];
+  const originalLog = console.log;
+  console.log = (...args: unknown[]) => { output.push(args); };
+  const ctx = {
+    updateType: "message_reaction",
+    update: { update_id: 10, message_reaction: {} },
+    telegram: { token: "secret-bot-token" },
+    chatId: 1,
+    fromId: 2,
+  } as never;
+
+  try {
+    await createRouter({ db: {} as never, components: [], config: { debug: true } })(ctx, async () => undefined);
+  } finally {
+    console.log = originalLog;
+  }
+
+  assert.doesNotMatch(JSON.stringify(output), /secret-bot-token/);
+  assert.match(JSON.stringify(output), /"chatId":1/);
+});
