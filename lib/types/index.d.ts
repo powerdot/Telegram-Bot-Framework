@@ -1,5 +1,6 @@
 import { Telegraf, Markup, Context as TelegrafContext } from 'telegraf';
 import { Application as ExpressApp } from "express"
+import { Server as HttpServer } from "node:http";
 import * as tt from 'typegram';
 import type { StorageClient, StorageCollection, StorageConfig, StorageDatabase } from '../storage/types';
 
@@ -175,6 +176,7 @@ interface Component {
     id?: string;
     type?: string;
     name?: string;
+    clearChatOnOpen?: boolean;
     actions: {
         "main": ComponentAction;
         [key: string]: ComponentAction;
@@ -184,7 +186,7 @@ interface Component {
     onMessage?: (ctx: TBFContext) => Promise<any>
     ctx?: TBFContext
     call?: (ctx: TBFContext) => Promise<any>
-    open?: (arg: { ctx: TBFContext, data: goToData, action: string }) => Promise<any>
+    open?: (arg: { ctx: TBFContext, data: goToData, action: string, clearChat?: boolean }) => Promise<any>
 }
 
 type ParseButtonsArg = {
@@ -215,6 +217,7 @@ interface StartupChainInstances {
     bot: Telegraf<TBFContext>;
     database: MongoDataBase;
     app?: ExpressApp | undefined;
+    server?: HttpServer | undefined;
 }
 
 
@@ -313,7 +316,8 @@ interface TBFPromiseReturn {
     db: DB;
     pages: Component[],
     plugins: Component[],
-    openPage: (arg: { ctx: TBFContext, page: string, data?: any, action?: string }) => Promise<Error | boolean>;
+    openPage: (arg: { ctx: TBFContext, page: string, data?: any, action?: string, clearChat?: boolean }) => Promise<boolean>;
+    stop: (signal?: string) => Promise<void>;
 }
 
 interface TBFConfig {
@@ -324,7 +328,12 @@ interface TBFConfig {
         path: string;
     }
     autoRemoveMessages?: boolean;
+    clearChatOnPageOpen?: boolean;
+    spamProtection?: boolean;
     debug?: boolean;
+    gracefulShutdown?: {
+        handleSignals?: boolean;
+    };
     webServer?: {
         port: any;
         address: string;

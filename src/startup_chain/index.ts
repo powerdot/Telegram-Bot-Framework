@@ -9,7 +9,11 @@ function activate({ telegram, storage, mongo, webServer, config }: TBFArgs): Pro
             let instances: StartupChainInstances = {
                 bot: await _bot(telegram),
                 database: await createStorage(resolveStorageConfig(storage, mongo)),
-                app: (webServer && webServer.module) ? await _webserver(webServer, config) : undefined
+                ...((webServer && webServer.module)
+                    ? await _webserver(webServer, config).then(instance => instance
+                        ? { app: instance.app, server: instance.server }
+                        : { app: undefined, server: undefined })
+                    : { app: undefined, server: undefined })
             }
             return resolve(instances);
         } catch (error) {

@@ -58,6 +58,14 @@ Components can subscribe to arbitrary Telegram update types through `events`. Ex
 
 Action handlers now expose `reply`, media helpers, `sendPoll`, `sendLocation`, `sendChatAction`, `react`, and the generic `api(method, payload)` escape hatch. The generic API method is intentionally loosely typed so applications can use a newly released Telegram method before Telegraf and TBF publish updated types.
 
+## Page navigation and runtime lifecycle
+
+`await openPage()` now waits for the selected page action to finish. This fixes the previous promise contract, which resolved immediately after starting the action.
+
+Page cleanup can be controlled with global `clearChatOnPageOpen`, component `clearChatOnOpen`, or transition `clearChat`. All are optional and the fallback remains `true`, preserving historical behavior. `spamProtection` is also configurable and defaults to `true`.
+
+The returned TBF application now has an idempotent `stop(signal?)` method. Automatic `SIGINT` and `SIGTERM` handling is opt-in through `gracefulShutdown.handleSignals` and defaults to `false`.
+
 ## Publishing a release
 
 Run `npm run release:dry-run` before creating a GitHub Release. Publishing a release triggers `.github/workflows/publish.yml`, verifies that the GitHub tag matches `package.json`, runs the complete prepublish check, and publishes through npm Trusted Publishing.

@@ -14,6 +14,7 @@ test("page loader builds routes, persists oversized data, and opens a page", asy
   mkdirSync(pluginsPath);
   writeFileSync(join(pagesPath, "index.js"), `
     module.exports = ({ parseButtons }) => ({
+      clearChatOnOpen: false,
       actions: { main({ data }) { globalThis.__tbfOpenedWith = data; globalThis.__tbfBinding = this; } },
       events: {
         message_reaction(ctx) { globalThis.__tbfReactionEvent = { ctx, binding: this }; }
@@ -75,9 +76,14 @@ test("page loader builds routes, persists oversized data, and opens a page", asy
     assert.equal(calls[0][0], 77);
     assert.equal(calls[0][1], "12");
 
+    const removalsBeforeOpen = calls.filter(call => call[0] === "removeMessages").length;
     await page.open?.({ ctx, action: "main", data: { opened: true } });
     assert.deepEqual((globalThis as any).__tbfOpenedWith, { opened: true });
+    assert.equal(calls.filter(call => call[0] === "removeMessages").length, removalsBeforeOpen);
     assert.ok(calls.some(call => call[0] === "setValue" && call[1] === "step" && call[2] === "index�main"));
+
+    await page.open?.({ ctx, action: "main", data: { override: true }, clearChat: true });
+    assert.equal(calls.filter(call => call[0] === "removeMessages").length, removalsBeforeOpen + 1);
 
     const binding = (globalThis as any).__tbfBinding;
     await binding.sendPhoto({ photo: "photo-id", options: { message_thread_id: 5 } });

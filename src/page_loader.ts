@@ -19,17 +19,15 @@ type loaderArgs = {
     db: DB,
     config: TBFConfig,
     inputComponents: PaginatorComponent[],
-    componentType: string
+    componentType: string,
+    loadedComponents: Component[]
 }
 
 type loaderReturn = {
     components: Component[]
 }
 
-let loadedComponents: Component[] = [];
-
-
-function loader({ db, config, inputComponents, componentType }: loaderArgs): loaderReturn {
+function loader({ db, config, inputComponents, componentType, loadedComponents }: loaderArgs): loaderReturn {
     async function sendApiMessage(binding: ComponentActionHandlerThis, method: string, payload: Record<string, any>) {
         const result = await binding.api(method, payload);
         const messages = Array.isArray(result) ? result : [result];
@@ -522,13 +520,19 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                 if (eventHandler) await eventHandler.bind({ ...binding, ctx })(ctx);
             }
         }
-        if (!pageObject.open) pageObject.open = async function ({ ctx, data, action }: { ctx: TBFContext, data: any, action: string }) {
+        if (!pageObject.open) pageObject.open = async function ({
+            ctx,
+            data,
+            action,
+            clearChat,
+        }: { ctx: TBFContext, data: any, action: string, clearChat?: boolean }) {
             if (ctx.from) {
                 await db.setValue(ctx, "from", ctx.from);
             }
             let act = action || 'main';
             let action_fn = extractHandler(pageObject.actions[act]);
-            await db.messages.removeMessages(ctx);
+            const shouldClearChat = clearChat ?? pageObject.clearChatOnOpen ?? config.clearChatOnPageOpen ?? true;
+            if (shouldClearChat) await db.messages.removeMessages(ctx);
             await db.setValue(ctx, "step", pageObject.id + "�" + act);
             await action_fn.bind({ ...binding, ctx })({ ctx, data });
         }
@@ -541,15 +545,16 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
 export default (
     { db, config }: { db: DB, config: TBFConfig }
 ) => {
+    let loadedComponents: Component[] = [];
     let paginator: PaginatorReturn = Paginator({ config });
 
     let pages_components = paginator.list("pages")
-    let pages = loader({ db, config, inputComponents: pages_components, componentType: 'page' }).components;
+    let pages = loader({ db, config, inputComponents: pages_components, componentType: 'page', loadedComponents }).components;
     loadedComponents.push(...pages);
     console.log("✅", `Loader: ${pages.length} ${pages.length == 1 ? 'page' : 'pages'} loaded!`);
 
     let plugins_components = paginator.list("plugins")
-    let plugins = loader({ db, config, inputComponents: plugins_components, componentType: 'plugin' }).components;
+    let plugins = loader({ db, config, inputComponents: plugins_components, componentType: 'plugin', loadedComponents }).components;
     loadedComponents.push(...plugins);
     console.log("✅", `Loader: ${plugins.length} ${plugins.length == 1 ? 'plugin' : 'plugins'} loaded!`);
 

@@ -92,6 +92,73 @@ TBF({
 
 The previous `mongo: { url, dbName }` option remains available for compatibility, but new applications should use `storage`.
 
+### Runtime behavior
+
+New configuration options preserve the historical TBF behavior when omitted:
+
+```ts
+TBF({
+    telegram: { token: "xxx" },
+    config: {
+        autoRemoveMessages: true,
+        clearChatOnPageOpen: true,
+        spamProtection: true,
+        gracefulShutdown: {
+            handleSignals: false
+        }
+    }
+});
+```
+
+`clearChatOnPageOpen` controls immediate cleanup during programmatic page navigation. It is separate from `autoRemoveMessages`, which periodically removes old tracked messages.
+
+Cleanup can be overridden for one page:
+
+```ts
+Component(() => ({
+    clearChatOnOpen: false,
+    actions: { main() {} }
+}));
+```
+
+Or for one transition:
+
+```ts
+await openPage({
+    ctx,
+    page: "history",
+    clearChat: false
+});
+```
+
+The priority is transition option, page option, global config, and finally the compatible default `true`.
+
+`await openPage()` waits until the selected page action completes.
+
+### Graceful shutdown
+
+TBF returns an idempotent `stop()` method that stops Telegraf, the message cleanup timer and HTTP server, then closes storage:
+
+```ts
+const app = await TBF({ telegram: { token } });
+
+process.once("SIGTERM", () => {
+    void app.stop("SIGTERM");
+});
+```
+
+TBF can register `SIGINT` and `SIGTERM` handlers itself when explicitly enabled:
+
+```ts
+config: {
+    gracefulShutdown: {
+        handleSignals: true
+    }
+}
+```
+
+Automatic signal handling is disabled by default so the framework does not take ownership of the host application's process lifecycle.
+
 So next step is create **index** page (check *Introduction to Pages* section below).
 
 ## Introduction to Pages

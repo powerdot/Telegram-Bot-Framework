@@ -11,7 +11,7 @@
     "build": "tsc && cp -r src/types lib",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test test/*.test.ts",
-    "test:coverage": "node --import tsx --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=85 --test-coverage-functions=99 --test-coverage-include=src/data_packer.ts --test-coverage-include=src/paginator.ts --test-coverage-include=src/helpers/index.ts '--test-coverage-include=src/bot_middlewares/*.ts' --test-coverage-include=src/storage/sqlite.ts test/*.test.ts",
+    "test:coverage": "node --import tsx --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=85 --test-coverage-functions=99 --test-coverage-include=src/config.ts --test-coverage-include=src/data_packer.ts --test-coverage-include=src/paginator.ts --test-coverage-include=src/helpers/index.ts '--test-coverage-include=src/bot_middlewares/*.ts' --test-coverage-include=src/storage/sqlite.ts test/*.test.ts",
     "check": "npm run typecheck && npm run test:coverage && npm run build && npm run smoke",
     "smoke": "node -e \"const api = require('./lib'); if (typeof api.TBF !== 'function' || typeof api.Component !== 'function') process.exit(1)\"",
     "prepublishOnly": "npm run check",
