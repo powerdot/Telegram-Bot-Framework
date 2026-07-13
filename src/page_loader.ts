@@ -334,13 +334,8 @@ function loader({ db, config, inputComponents, componentType, loadedComponents, 
                 let found_component = loadedComponents.find(x => x.id == component && x.type == type);
                 if (found_component) {
                     if (config.chatActions?.stopOnNavigation) chatActionManager.stop(_this.ctx);
-                    await db.setValue(_this.ctx, "step", component + "�" + action);
-                    let action_fn = extractHandler(found_component.actions[action]);
                     try {
-                        const actionBinding = { ..._this, ...{ id: component } };
-                        return await runAction(found_component.actions[action], actionBinding, () =>
-                            action_fn.bind(actionBinding)({ ctx: _this.ctx, data })
-                        );
+                        return await found_component.open?.({ ctx: _this.ctx, data, action });
                     } catch (error) {
                         console.error("goToComponent error", error);
                         return null;
@@ -493,6 +488,13 @@ function loader({ db, config, inputComponents, componentType, loadedComponents, 
             let main_fn = extractHandler(pageObject.actions.main);
             main_fn.bind(binding);
         }
+        const prepareOpen = async (ctx: TBFContext, clearChat?: boolean) => {
+            if (ctx.from) {
+                await db.setValue(ctx, "from", ctx.from);
+            }
+            const shouldClearChat = clearChat ?? pageObject.clearChatOnOpen ?? config.clearChatOnPageOpen ?? true;
+            if (shouldClearChat) await db.messages.removeMessages(ctx);
+        };
         if (!pageObject.onCallbackQuery) {
             pageObject.onCallbackQuery = async (ctx: TBFContext) => {
                 pageObject.ctx = ctx;
@@ -569,7 +571,11 @@ function loader({ db, config, inputComponents, componentType, loadedComponents, 
         if (!pageObject.call) {
             pageObject.call = async (ctx) => {
                 if (config.debug) console.log("[call]", pageObject.id, ctx.routing);
-                if (ctx.routing.type == 'callback_query') await pageObject.onCallbackQuery(ctx);
+                if (ctx.routing.type == 'callback_query') {
+                    const previousComponent = ctx.routing.step?.split("�")[0];
+                    if (previousComponent !== pageObject.id) await prepareOpen(ctx);
+                    await pageObject.onCallbackQuery(ctx);
+                }
                 if (ctx.routing.type == 'message') await pageObject.onMessage(ctx);
                 const eventHandler = pageObject.events?.[ctx.updateType];
                 if (eventHandler) await eventHandler.bind({ ...binding, ctx })(ctx);
@@ -581,16 +587,12 @@ function loader({ db, config, inputComponents, componentType, loadedComponents, 
             action,
             clearChat,
         }: { ctx: TBFContext, data: any, action: string, clearChat?: boolean }) {
-            if (ctx.from) {
-                await db.setValue(ctx, "from", ctx.from);
-            }
             let act = action || 'main';
             let action_fn = extractHandler(pageObject.actions[act]);
-            const shouldClearChat = clearChat ?? pageObject.clearChatOnOpen ?? config.clearChatOnPageOpen ?? true;
-            if (shouldClearChat) await db.messages.removeMessages(ctx);
+            await prepareOpen(ctx, clearChat);
             await db.setValue(ctx, "step", pageObject.id + "�" + act);
             const actionBinding = { ...binding, ctx };
-            await runAction(pageObject.actions[act], actionBinding, () =>
+            return await runAction(pageObject.actions[act], actionBinding, () =>
                 action_fn.bind(actionBinding)({ ctx, data })
             );
         }
