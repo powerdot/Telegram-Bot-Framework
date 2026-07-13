@@ -1,18 +1,19 @@
 import { StartupChainInstances, TBFArgs } from "../types";
 import _bot from "./bot";
-import _database from "./database";
 import _webserver from "./webserver";
+import createStorage, { resolveStorageConfig } from "../storage";
 
-function activate({ telegram, mongo, webServer, config }: TBFArgs): Promise<StartupChainInstances> {
+function activate({ telegram, storage, mongo, webServer, config }: TBFArgs): Promise<StartupChainInstances> {
     return new Promise(async resolve => {
         try {
             let instances: StartupChainInstances = {
                 bot: await _bot(telegram),
-                database: await _database(mongo || {
-                    url: "mongodb://localhost:27017",
-                    dbName: "tbf_default"
-                }),
-                app: (webServer && webServer.module) ? await _webserver(webServer, config) : undefined
+                database: await createStorage(resolveStorageConfig(storage, mongo)),
+                ...((webServer && webServer.module)
+                    ? await _webserver(webServer, config).then(instance => instance
+                        ? { app: instance.app, server: instance.server }
+                        : { app: undefined, server: undefined })
+                    : { app: undefined, server: undefined })
             }
             return resolve(instances);
         } catch (error) {

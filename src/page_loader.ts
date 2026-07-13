@@ -19,17 +19,23 @@ type loaderArgs = {
     db: DB,
     config: TBFConfig,
     inputComponents: PaginatorComponent[],
-    componentType: string
+    componentType: string,
+    loadedComponents: Component[]
 }
 
 type loaderReturn = {
     components: Component[]
 }
 
-let loadedComponents: Component[] = [];
+function loader({ db, config, inputComponents, componentType, loadedComponents }: loaderArgs): loaderReturn {
+    async function sendApiMessage(binding: ComponentActionHandlerThis, method: string, payload: Record<string, any>) {
+        const result = await binding.api(method, payload);
+        const messages = Array.isArray(result) ? result : [result];
+        const trackable = messages.filter(message => message && typeof message === "object" && "message_id" in message);
+        if (trackable.length > 0) await db.messages.addToRemoveMessages(binding.ctx, trackable as any, false);
+        return result;
+    }
 
-
-function loader({ db, config, inputComponents, componentType }: loaderArgs): loaderReturn {
     async function removeMessageWrapper(sendKey, args = []) {
         let sent = await this.ctx.telegram[sendKey](this.ctx.chatId, ...args);
         await db.messages.addToRemoveMessages(this.ctx, sent, false);
@@ -129,11 +135,13 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
             id: pageObject.id,
             type: pageObject.type,
             ctx: null,
-            async send(this: ComponentActionHandlerThis, { text = "", buttons = [], keyboard = [] }) {
+            async send(this: ComponentActionHandlerThis, { text = "", buttons = [], keyboard = [], options: extraOptions = {} }) {
                 let _this: ComponentActionHandlerThis = this;
                 if (text === undefined) throw new Error("send() text is empty");
                 let options = {
+                    ...extraOptions,
                     reply_markup: {
+                        ...(extraOptions.reply_markup || {}),
                         inline_keyboard: [],
                         keyboard: [],
                         resize_keyboard: true,
@@ -154,12 +162,71 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                 }
 
                 try {
-                    let message = await _this.ctx.telegram.sendMessage(_this.ctx.chatId, text, { ...options, parse_mode: 'HTML' });
+                    let message = await _this.ctx.telegram.sendMessage(_this.ctx.chatId, text, {
+                        ...options,
+                        parse_mode: extraOptions.parse_mode ?? 'HTML'
+                    });
                     await db.messages.addToRemoveMessages(_this.ctx, [message], false)
                     return message;
                 } catch (error) {
                     console.error(error);
                 }
+            },
+            async reply(this: ComponentActionHandlerThis, args) {
+                const messageId = this.ctx.message?.message_id ?? this.ctx.callbackQuery?.message?.message_id;
+                return this.send({
+                    ...args,
+                    options: {
+                        ...args.options,
+                        reply_parameters: messageId ? { message_id: messageId, ...args.options?.reply_parameters } : undefined,
+                    },
+                });
+            },
+            async api<T = any>(this: ComponentActionHandlerThis, method: string, payload: Record<string, any> = {}): Promise<T> {
+                return (this.ctx.telegram.callApi as any)(method, payload);
+            },
+            async sendPhoto(this: ComponentActionHandlerThis, { photo, options = {} }) {
+                return sendApiMessage(this, "sendPhoto", { chat_id: this.ctx.chatId, photo, ...options });
+            },
+            async sendVideo(this: ComponentActionHandlerThis, { video, options = {} }) {
+                return sendApiMessage(this, "sendVideo", { chat_id: this.ctx.chatId, video, ...options });
+            },
+            async sendAnimation(this: ComponentActionHandlerThis, { animation, options = {} }) {
+                return sendApiMessage(this, "sendAnimation", { chat_id: this.ctx.chatId, animation, ...options });
+            },
+            async sendAudio(this: ComponentActionHandlerThis, { audio, options = {} }) {
+                return sendApiMessage(this, "sendAudio", { chat_id: this.ctx.chatId, audio, ...options });
+            },
+            async sendDocument(this: ComponentActionHandlerThis, { document, options = {} }) {
+                return sendApiMessage(this, "sendDocument", { chat_id: this.ctx.chatId, document, ...options });
+            },
+            async sendVoice(this: ComponentActionHandlerThis, { voice, options = {} }) {
+                return sendApiMessage(this, "sendVoice", { chat_id: this.ctx.chatId, voice, ...options });
+            },
+            async sendSticker(this: ComponentActionHandlerThis, { sticker, options = {} }) {
+                return sendApiMessage(this, "sendSticker", { chat_id: this.ctx.chatId, sticker, ...options });
+            },
+            async sendLocation(this: ComponentActionHandlerThis, { latitude, longitude, options = {} }) {
+                return sendApiMessage(this, "sendLocation", { chat_id: this.ctx.chatId, latitude, longitude, ...options });
+            },
+            async sendPoll(this: ComponentActionHandlerThis, { question, options, extra = {} }) {
+                return sendApiMessage(this, "sendPoll", { chat_id: this.ctx.chatId, question, options, ...extra });
+            },
+            async sendChatAction(this: ComponentActionHandlerThis, action, options = {}) {
+                return this.api("sendChatAction", { chat_id: this.ctx.chatId, action, ...options });
+            },
+            async react(this: ComponentActionHandlerThis, reaction, options = {}) {
+                const messageId = this.ctx.message?.message_id ?? this.ctx.callbackQuery?.message?.message_id;
+                if (!messageId) throw new Error("react() requires a message context or message_id");
+                const reactions = (Array.isArray(reaction) ? reaction : [reaction]).map(item =>
+                    typeof item === "string" ? { type: "emoji", emoji: item } : item
+                );
+                return this.api("setMessageReaction", {
+                    chat_id: this.ctx.chatId,
+                    message_id: messageId,
+                    reaction: reactions,
+                    ...options,
+                });
             },
             async update(this: ComponentActionHandlerThis, { text = "", buttons = [], keyboard = [] }) {
                 if (text === undefined) throw new Error("update() text is empty");
@@ -304,6 +371,9 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     async send(args) {
                         return binding.send.bind(userBinding)(args);
                     },
+                    async reply(args) {
+                        return binding.reply.bind(userBinding)(args);
+                    },
                     async update(args) {
                         return binding.update.bind(userBinding)(args);
                     },
@@ -324,6 +394,42 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                     },
                     async sendMediaGroup(args) {
                         return binding.sendMediaGroup.bind(userBinding)(args);
+                    },
+                    async sendPhoto(args) {
+                        return binding.sendPhoto.bind(userBinding)(args);
+                    },
+                    async sendVideo(args) {
+                        return binding.sendVideo.bind(userBinding)(args);
+                    },
+                    async sendAnimation(args) {
+                        return binding.sendAnimation.bind(userBinding)(args);
+                    },
+                    async sendAudio(args) {
+                        return binding.sendAudio.bind(userBinding)(args);
+                    },
+                    async sendDocument(args) {
+                        return binding.sendDocument.bind(userBinding)(args);
+                    },
+                    async sendVoice(args) {
+                        return binding.sendVoice.bind(userBinding)(args);
+                    },
+                    async sendSticker(args) {
+                        return binding.sendSticker.bind(userBinding)(args);
+                    },
+                    async sendLocation(args) {
+                        return binding.sendLocation.bind(userBinding)(args);
+                    },
+                    async sendPoll(args) {
+                        return binding.sendPoll.bind(userBinding)(args);
+                    },
+                    async sendChatAction(action, options) {
+                        return binding.sendChatAction.bind(userBinding)(action, options);
+                    },
+                    async react(reaction, options) {
+                        return binding.react.bind(userBinding)(reaction, options);
+                    },
+                    async api(method, payload) {
+                        return binding.api.bind(userBinding)(method, payload);
                     },
                     getCurrentRoute: async () => {
                         let step = await db.getValue(user_id, "step");
@@ -410,15 +516,23 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
                 if (config.debug) console.log("[call]", pageObject.id, ctx.routing);
                 if (ctx.routing.type == 'callback_query') await pageObject.onCallbackQuery(ctx);
                 if (ctx.routing.type == 'message') await pageObject.onMessage(ctx);
+                const eventHandler = pageObject.events?.[ctx.updateType];
+                if (eventHandler) await eventHandler.bind({ ...binding, ctx })(ctx);
             }
         }
-        if (!pageObject.open) pageObject.open = async function ({ ctx, data, action }: { ctx: TBFContext, data: any, action: string }) {
+        if (!pageObject.open) pageObject.open = async function ({
+            ctx,
+            data,
+            action,
+            clearChat,
+        }: { ctx: TBFContext, data: any, action: string, clearChat?: boolean }) {
             if (ctx.from) {
                 await db.setValue(ctx, "from", ctx.from);
             }
             let act = action || 'main';
             let action_fn = extractHandler(pageObject.actions[act]);
-            await db.messages.removeMessages(ctx);
+            const shouldClearChat = clearChat ?? pageObject.clearChatOnOpen ?? config.clearChatOnPageOpen ?? true;
+            if (shouldClearChat) await db.messages.removeMessages(ctx);
             await db.setValue(ctx, "step", pageObject.id + "�" + act);
             await action_fn.bind({ ...binding, ctx })({ ctx, data });
         }
@@ -431,15 +545,16 @@ function loader({ db, config, inputComponents, componentType }: loaderArgs): loa
 export default (
     { db, config }: { db: DB, config: TBFConfig }
 ) => {
+    let loadedComponents: Component[] = [];
     let paginator: PaginatorReturn = Paginator({ config });
 
     let pages_components = paginator.list("pages")
-    let pages = loader({ db, config, inputComponents: pages_components, componentType: 'page' }).components;
+    let pages = loader({ db, config, inputComponents: pages_components, componentType: 'page', loadedComponents }).components;
     loadedComponents.push(...pages);
     console.log("✅", `Loader: ${pages.length} ${pages.length == 1 ? 'page' : 'pages'} loaded!`);
 
     let plugins_components = paginator.list("plugins")
-    let plugins = loader({ db, config, inputComponents: plugins_components, componentType: 'plugin' }).components;
+    let plugins = loader({ db, config, inputComponents: plugins_components, componentType: 'plugin', loadedComponents }).components;
     loadedComponents.push(...plugins);
     console.log("✅", `Loader: ${plugins.length} ${plugins.length == 1 ? 'plugin' : 'plugins'} loaded!`);
 

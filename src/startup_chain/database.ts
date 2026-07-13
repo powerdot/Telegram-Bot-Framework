@@ -1,10 +1,10 @@
-import { MongoClient, Collection as MongoCollection } from 'mongodb/mongodb';
-import { MongoDataBase } from '../types';
+import { MongoClient, Collection as MongoCollection } from 'mongodb';
+import type { MongoStorageConfig, StorageDatabase } from '../storage/types';
 
 export default function ({
     url,
     dbName
-}: { url?: string, dbName: string }): Promise<MongoDataBase> {
+}: MongoStorageConfig): Promise<StorageDatabase> {
     return new Promise(async resolve => {
         const { MongoClient } = require('mongodb');
 
@@ -36,6 +36,7 @@ export default function ({
             collection_TempData = client.db(_database_name).collection("temp_data");
             collection_SharedData = client.db(_database_name).collection("shared_data");
             resolve({
+                driver: "mongodb",
                 client,
                 collection_UserData,
                 collection_BotMessageHistory,
@@ -46,7 +47,7 @@ export default function ({
                 collection_UserDataCollection,
                 collection_TempData,
                 collection_SharedData
-            } as MongoDataBase);
+            } as StorageDatabase);
             console.log("ℹ️ ", "Database connected");
         } catch (error) {
             console.error("💔 Error connecting to mongo:", error);

@@ -17,69 +17,86 @@ import Middleware_MarkUserMessages from "./bot_middlewares/mark_user_messages";
 import Middleware_Router from "./bot_middlewares/router";
 
 import AutoRemoveMessages from "./auto_remove_messages";
+import { resolveConfig } from "./config";
 
-let path = require("path");
+let Create = async ({ webServer, telegram, storage, mongo, config }: TBFArgs): Promise<TBFPromiseReturn> => {
+    const resolvedConfig = resolveConfig(config);
+    const { bot, app, server, database }: StartupChainInstances = await StartupChain({
+        webServer,
+        telegram,
+        storage,
+        mongo,
+        config: resolvedConfig,
+    } as TBFArgs);
+    const db: DB = DBInstance(bot, database, resolvedConfig);
+    const { pages, plugins }: { pages: Component[], plugins: Component[] } = PageLoader({ db, config: resolvedConfig });
+    const components = [...pages, ...plugins];
 
-let Create = ({ webServer, telegram, mongo, config }: TBFArgs): Promise<TBFPromiseReturn> => {
+    bot.use(Middleware_SetIds());
+    if (resolvedConfig.spamProtection) bot.use(Middleware_Spam());
+    bot.use(Middleware_MarkUserMessages({ db }));
+    bot.use(Middleware_Router({ db, components, config: resolvedConfig }));
 
-    let cwd = process.cwd();
-    let default_config = {
-        pages: {
-            path: path.resolve(cwd, "./pages"),
-        },
-        plugins: {
-            path: path.resolve(cwd, "./plugins"),
-        },
-        autoRemoveMessages: true,
-        debug: false,
-        webServer: {
-            port: 8080,
-            address: "",
-        }
+    if (app && webServer?.module) {
+        app.use(webServer.module({ bot, db, config: resolvedConfig, components, database } as WebServerArgs));
     }
 
-    let _config = Object.assign(default_config, config);
+    const autoRemoveTimer = resolvedConfig.autoRemoveMessages ? AutoRemoveMessages({ db }) : undefined;
+    let stopped = false;
 
-    if (_config.webServer?.address) _config.webServer.address = _config.webServer.address.replace('//localhost', '//127.0.0.1');
-
-    return new Promise(async (resolve, reject) => {
-        StartupChain({ webServer, telegram, mongo, config: _config } as TBFArgs).then(async ({ bot, app, database }: StartupChainInstances) => {
-            let db: DB = DBInstance(bot, database, _config);
-            let { pages, plugins }: { pages: Component[], plugins: Component[] } = PageLoader({ db, config: _config });
-            let components = [...pages, ...plugins];
-
-            bot.use(Middleware_SetIds());
-            bot.use(Middleware_Spam());
-            bot.use(Middleware_MarkUserMessages({ db }));
-
-            let return_data: TBFPromiseReturn = {
-                bot,
-                app,
-                database,
-                db,
-                pages,
-                plugins,
-                openPage: ({ ctx, page, data, action = "main" }) => {
-                    return new Promise(async (resolve, reject) => {
-                        let found_page = components.find(p => p.id === page);
-                        if (!found_page) return reject(new Error("Component not found: " + page));
-                        if (found_page.open) found_page.open({ ctx, data, action });
-                        return resolve(true);
-                    });
-                }
+    const stop = async (signal = "TBF stop") => {
+        if (stopped) return;
+        stopped = true;
+        const errors: unknown[] = [];
+        process.removeListener("SIGINT", handleSignal);
+        process.removeListener("SIGTERM", handleSignal);
+        if (autoRemoveTimer) clearInterval(autoRemoveTimer);
+        try {
+            bot.stop(signal);
+        } catch (error) {
+            errors.push(error);
+        }
+        try {
+            if (server?.listening) {
+                await new Promise<void>((resolve, reject) => {
+                    server.close(error => error ? reject(error) : resolve());
+                });
             }
-            await resolve(return_data);
+        } catch (error) {
+            errors.push(error);
+        }
+        try {
+            await database.client.close();
+        } catch (error) {
+            errors.push(error);
+        }
+        if (errors.length > 0) throw new AggregateError(errors, "TBF shutdown failed");
+    };
 
-            if (_config.autoRemoveMessages) AutoRemoveMessages({ db });
+    const handleSignal = (signal: NodeJS.Signals) => {
+        void stop(signal).catch(error => console.error("💔 Error during graceful shutdown:", error));
+    };
 
-            // Engine router
-            bot.use(Middleware_Router({ db, components, config: _config }));
+    if (resolvedConfig.gracefulShutdown.handleSignals) {
+        process.once("SIGINT", handleSignal);
+        process.once("SIGTERM", handleSignal);
+    }
 
-            // Starting web server
-            if (app && webServer?.module)
-                app.use(webServer.module({ bot, db, config: _config, components, database } as WebServerArgs));
-        });
-    });
+    return {
+        bot,
+        app,
+        database,
+        db,
+        pages,
+        plugins,
+        async openPage({ ctx, page, data, action = "main", clearChat }) {
+            const foundPage = components.find(component => component.id === page);
+            if (!foundPage) throw new Error("Component not found: " + page);
+            await foundPage.open?.({ ctx, data, action, clearChat });
+            return true;
+        },
+        stop,
+    };
 };
 
 function ComponentInit(fn: ComponentExport) {
@@ -90,3 +107,5 @@ export {
     Create as TBF,
     ComponentInit as Component
 };
+
+export type { StorageConfig, StorageDatabase } from "./storage";

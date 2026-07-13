@@ -1,11 +1,29 @@
 import { Telegraf } from "telegraf";
 import { TBFContext } from "../types";
 
+type LaunchableBot = {
+    launch(config: object, onLaunch: () => void): Promise<void>;
+};
+
+function waitForBotLaunch(bot: LaunchableBot): Promise<void> {
+    return new Promise((resolve, reject) => {
+        let launched = false;
+        const polling = bot.launch({}, () => {
+            launched = true;
+            resolve();
+        });
+        polling.catch(error => {
+            if (!launched) reject(error);
+            else console.error("🚫 ", "Telegram polling error:", error);
+        });
+    });
+}
+
 export default function ({
     token,
     apiUrl
 }: { token: string, apiUrl?: string }): Promise<Telegraf<TBFContext>> {
-    return new Promise(async resolve => {
+    return new Promise(async (resolve, reject) => {
         const { Telegraf } = require('telegraf')
 
         let _token = token;
@@ -33,10 +51,11 @@ export default function ({
             console.error("🚫 ", "Telegram bot error:", err);
         });
 
-        bot.launch().then(() => {
+        waitForBotLaunch(bot).then(() => {
             console.log("ℹ️ ", "Telegram bot launched");
             resolve(bot);
-            return;
-        })
+        }).catch(reject);
     })
 }
+
+export { waitForBotLaunch };

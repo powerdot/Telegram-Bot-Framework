@@ -1,6 +1,8 @@
 import { Telegraf, Markup, Context as TelegrafContext } from 'telegraf';
 import { Application as ExpressApp } from "express"
-import * as tt from 'telegraf/src/core/types/typegram';
+import { Server as HttpServer } from "node:http";
+import * as tt from 'typegram';
+import type { StorageClient, StorageCollection, StorageConfig, StorageDatabase } from '../storage/types';
 
 type TelegramMessage = tt.Message;
 
@@ -18,6 +20,8 @@ type CallbackPath = {
 
 interface TBFContext extends TelegrafContext {
     chatId?: number | null
+    fromId?: number
+    senderChatId?: number
     routeTo?: string
     routing: {
         type: string
@@ -77,7 +81,8 @@ type Keyboard = Array<KeyboardRow>
 type ComponentActionHandlerThisSendArg = {
     text?: string,
     buttons?: MessageButtons,
-    keyboard?: Keyboard
+    keyboard?: Keyboard,
+    options?: Record<string, any>
 }
 
 type ComponentActionHandlerThisUpdateArg = {
@@ -103,8 +108,21 @@ type PluginButton = {
 
 interface ComponentActionHandlerThisMethods {
     send: (arg: ComponentActionHandlerThisSendArg) => Promise<any>;
+    reply: (arg: ComponentActionHandlerThisSendArg) => Promise<any>;
     update: (arg: ComponentActionHandlerThisUpdateArg) => Promise<any>;
     sendMediaGroup: (arg: ComponentActionHandlerThisSendArg & { media: any[], options?: object }) => Promise<any>;
+    sendPhoto: (arg: { photo: any, options?: Record<string, any> }) => Promise<any>;
+    sendVideo: (arg: { video: any, options?: Record<string, any> }) => Promise<any>;
+    sendAnimation: (arg: { animation: any, options?: Record<string, any> }) => Promise<any>;
+    sendAudio: (arg: { audio: any, options?: Record<string, any> }) => Promise<any>;
+    sendDocument: (arg: { document: any, options?: Record<string, any> }) => Promise<any>;
+    sendVoice: (arg: { voice: any, options?: Record<string, any> }) => Promise<any>;
+    sendSticker: (arg: { sticker: any, options?: Record<string, any> }) => Promise<any>;
+    sendLocation: (arg: { latitude: number, longitude: number, options?: Record<string, any> }) => Promise<any>;
+    sendPoll: (arg: { question: string, options: any[], extra?: Record<string, any> }) => Promise<any>;
+    sendChatAction: (action: string, options?: Record<string, any>) => Promise<any>;
+    react: (reaction: string | Record<string, any> | Array<string | Record<string, any>>, options?: Record<string, any>) => Promise<any>;
+    api: <T = any>(method: string, payload?: Record<string, any>) => Promise<T>;
     goToAction: (arg: { action: string, data?: goToData }) => Promise<any>;
     goToPage: (arg: { page: string, action?: string, data?: goToData }) => Promise<any>;
     goToComponent: (arg: { component: string, action?: string, data?: goToData, type: string }) => Promise<any>;
@@ -158,15 +176,17 @@ interface Component {
     id?: string;
     type?: string;
     name?: string;
+    clearChatOnOpen?: boolean;
     actions: {
         "main": ComponentAction;
         [key: string]: ComponentAction;
     },
+    events?: Partial<Record<string, (this: ComponentActionHandlerThis, ctx: TBFContext) => any>>,
     onCallbackQuery?: (ctx: TBFContext) => Promise<any>
     onMessage?: (ctx: TBFContext) => Promise<any>
     ctx?: TBFContext
     call?: (ctx: TBFContext) => Promise<any>
-    open?: (arg: { ctx: TBFContext, data: goToData, action: string }) => Promise<any>
+    open?: (arg: { ctx: TBFContext, data: goToData, action: string, clearChat?: boolean }) => Promise<any>
 }
 
 type ParseButtonsArg = {
@@ -189,25 +209,15 @@ interface ComponentExport {
 }
 
 
-import { MongoClient, Collection as MongoCollection, FindCursor, WithId, Document, InsertOneResult, UpdateResult, DeleteResult, Collection } from 'mongodb/mongodb';
+import { MongoClient, Collection as MongoCollection, WithId, Document, InsertOneResult, UpdateResult, DeleteResult, Collection } from 'mongodb';
 import { Message } from 'typegram';
-interface MongoDataBase {
-    client: MongoClient,
-    collection_UserData: MongoCollection,
-    collection_BotMessageHistory: MongoCollection,
-    collection_UserMessageHistory: MongoCollection,
-    collection_Data: MongoCollection,
-    collection_Users: MongoCollection,
-    collection_specialCommandsHistory: MongoCollection,
-    collection_UserDataCollection: MongoCollection,
-    collection_TempData: MongoCollection,
-    collection_SharedData: MongoCollection,
-}
+type MongoDataBase = StorageDatabase;
 
 interface StartupChainInstances {
     bot: Telegraf<TBFContext>;
     database: MongoDataBase;
     app?: ExpressApp | undefined;
+    server?: HttpServer | undefined;
 }
 
 
@@ -219,18 +229,18 @@ type DatabaseMessage = {
 } | undefined
 
 type DBUserCollection = {
-    find: (query: object) => Promise<WithId<Document>>;
-    findAll: (query: object) => Promise<Array<WithId<Document>>>;
-    insert: (value: object) => Promise<InsertOneResult<Document>>;
-    update: (query: object, value: object) => Promise<UpdateResult>;
-    updateMany: (query: object, value: object) => Promise<Document | UpdateResult>;
-    delete: (query: object) => Promise<DeleteResult>;
-    deleteMany: (query: object) => Promise<DeleteResult>;
+    find: (query?: object) => Promise<Record<string, any> | null>;
+    findAll: (query?: object) => Promise<Array<Record<string, any>>>;
+    insert: (value: object) => Promise<any>;
+    update: (query: object, value: object) => Promise<any>;
+    updateMany: (query: object, value: object) => Promise<any>;
+    delete: (query: object) => Promise<any>;
+    deleteMany: (query: object) => Promise<any>;
 }
 
 interface DB {
     bot: Telegraf<TBFContext>,
-    client: MongoClient,
+    client: StorageClient,
     messages: {
         bot: {
             getLastMessage: (ctx: TBFContext | number) => Promise<DatabaseMessage>;
@@ -251,7 +261,7 @@ interface DB {
 
     tempData: {
         add: (chatId: number, messagespase: string, uniqid: string, data: any) => Promise<void>;
-        get: (messagespase: string, uniqid: string) => Promise<WithId<Document>>;
+        get: (messagespase: string, uniqid: string) => Promise<any>;
         remove: (messagespase: string) => Promise<void>;
     },
 
@@ -277,15 +287,15 @@ interface DB {
         collection: (ctx: TBFContext | number, collection_name: string) => DBUserCollection
     },
     collections: {
-        userData: Collection,
-        botMessageHistory: Collection,
-        userMessageHistory: Collection,
-        data: Collection,
-        users: Collection,
-        specialCommandsHistory: Collection,
-        userDataCollection: Collection,
-        tempData: Collection,
-        sharedData: Collection
+        userData: StorageCollection,
+        botMessageHistory: StorageCollection,
+        userMessageHistory: StorageCollection,
+        data: StorageCollection,
+        users: StorageCollection,
+        specialCommandsHistory: StorageCollection,
+        userDataCollection: StorageCollection,
+        tempData: StorageCollection,
+        sharedData: StorageCollection
     }
 }
 
@@ -306,7 +316,8 @@ interface TBFPromiseReturn {
     db: DB;
     pages: Component[],
     plugins: Component[],
-    openPage: (arg: { ctx: TBFContext, page: string, data?: any, action?: string }) => Promise<Error | boolean>;
+    openPage: (arg: { ctx: TBFContext, page: string, data?: any, action?: string, clearChat?: boolean }) => Promise<boolean>;
+    stop: (signal?: string) => Promise<void>;
 }
 
 interface TBFConfig {
@@ -317,7 +328,12 @@ interface TBFConfig {
         path: string;
     }
     autoRemoveMessages?: boolean;
+    clearChatOnPageOpen?: boolean;
+    spamProtection?: boolean;
     debug?: boolean;
+    gracefulShutdown?: {
+        handleSignals?: boolean;
+    };
     webServer?: {
         port: any;
         address: string;
@@ -332,6 +348,8 @@ interface TBFArgs {
     webServer?: {
         module: any;
     },
+    storage?: StorageConfig,
+    /** @deprecated Use storage: { driver: "mongodb", ... } instead. */
     mongo?: {
         url?: string;
         dbName: string;
@@ -384,5 +402,8 @@ export {
     ComponentAction,
     ComponentActionHandlerThisUpdateArg,
     ComponentActionHandlerThisSendArg,
-    PluginButton
+    PluginButton,
+    StorageConfig,
+    StorageDatabase,
+    StorageCollection
 }

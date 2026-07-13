@@ -1,4 +1,5 @@
 import { Application } from "express";
+import { Server } from "node:http";
 import { TBFArgs, TBFConfig, WebServerArgs } from "../types";
 
 export default function ({
@@ -7,7 +8,7 @@ export default function ({
     module: (args: WebServerArgs) => {}
 },
     config: TBFConfig | undefined
-): Promise<Application | undefined> | undefined {
+): Promise<{ app: Application, server: Server } | undefined> | undefined {
     if (!config) {
         console.log('📛', 'Set config');
         return process.exit();
@@ -30,16 +31,13 @@ export default function ({
         console.log("ℹ️ ", "Bot's web server port:", _port);
     }
 
-    return new Promise(async resolve => {
+    return new Promise((resolve, reject) => {
         if (!module) return resolve(undefined);
         let app = express();
-        try {
-            app.listen(_port, function () {
-                console.log("ℹ️ ", "Bot's web server is running");
-                resolve(app);
-            })
-        } catch (error) {
-            console.error("💔", "Error while starting web server:", error);
-        }
+        const server = app.listen(_port, function () {
+            console.log("ℹ️ ", "Bot's web server is running");
+            resolve({ app, server });
+        });
+        server.once("error", reject);
     })
 }

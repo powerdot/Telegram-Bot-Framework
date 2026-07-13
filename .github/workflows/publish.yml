@@ -1,0 +1,82 @@
+name: Release package
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: package-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - name: Read package metadata
+        id: package
+        run: node -e "const fs = require('node:fs'); const pkg = require('./package.json'); fs.appendFileSync(process.env.GITHUB_OUTPUT, 'name=' + pkg.name + '\nversion=' + pkg.version + '\ntag=v' + pkg.version + '\n');"
+      - name: Check npm package version
+        id: npm
+        env:
+          PACKAGE_NAME: ${{ steps.package.outputs.name }}
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check GitHub Release
+        id: github_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.package.outputs.tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            gh release view "$RELEASE_TAG" --json isDraft --jq '"draft=" + (.isDraft | tostring)' >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "draft=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Nothing to release
+        if: steps.npm.outputs.published == 'true' && steps.github_release.outputs.exists == 'true' && steps.github_release.outputs.draft == 'false'
+        env:
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
+        run: echo "Version $PACKAGE_VERSION is already published to npm and GitHub Releases."
+      - name: Install locked dependencies
+        if: steps.npm.outputs.published != 'true' || steps.github_release.outputs.exists != 'true' || steps.github_release.outputs.draft == 'true'
+        run: npm ci
+      - name: Verify package
+        if: steps.npm.outputs.published != 'true' || steps.github_release.outputs.exists != 'true' || steps.github_release.outputs.draft == 'true'
+        run: npm run check
+      - name: Create draft GitHub Release
+        if: steps.github_release.outputs.exists != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.package.outputs.tag }}
+        run: gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "$RELEASE_TAG" --generate-notes --draft
+      - name: Publish to npm
+        if: steps.npm.outputs.published != 'true'
+        run: npm publish
+      - name: Publish GitHub Release
+        if: steps.github_release.outputs.exists != 'true' || steps.github_release.outputs.draft == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.package.outputs.tag }}
+        run: gh release edit "$RELEASE_TAG" --draft=false --latest

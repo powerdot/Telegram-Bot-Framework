@@ -1,11 +1,9 @@
 import type { DB } from "./types";
 
 export default ({ db }: { db: DB }) => {
-    let moment = require('moment');
-
     return setInterval(async function () {
-        let old_time = moment().add(-36, 'hours'); // 1.5 days
-        let msgs = await db.messages.findOldMessages(old_time.unix());
+        const thirtySixHoursAgo = Math.floor((Date.now() - 36 * 60 * 60 * 1000) / 1000);
+        let msgs = await db.messages.findOldMessages(thirtySixHoursAgo);
         let chats: Array<number> = msgs.map(x => Number(x?.chatId));
         chats = Array.from(new Set(chats));
         for (let chat of chats) {

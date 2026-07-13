@@ -11,7 +11,7 @@ Node.js framework based on [Telegraf](https://github.com/telegraf/telegraf) to f
 
 ## Features
 * Component-like developing (pages/plugins)
-* Built-in MongoDB support (to collect user's data: routing, sessions, etc.)
+* Built-in SQLite and MongoDB storage (routing, sessions, user data, etc.)
 * Built-in Express.js support
 * Works with JS and TS
 * Supports inherit Telegram and Telegraf methods
@@ -20,7 +20,9 @@ Node.js framework based on [Telegraf](https://github.com/telegraf/telegraf) to f
 
 ### Requirements
 
-⚠️ **To run TBF you need to have [MongoDB](https://www.mongodb.com/) installed and running.**
+TBF 2 requires **Node.js 24 or newer**.
+
+SQLite is used by default and stores bot data in `./data/tbf.sqlite`. No external database server is required.
 
 ### Install package
 
@@ -49,11 +51,8 @@ Create **enter point** for your bot:
 TBF({
     telegram: {
         token: "xxx", // provide your token
-    },
-    mongo: {
-        dbName: "testbot" // provide your db name in MongoDB
     }
-}).then(({ openPage }) => {
+}).then(({ bot, openPage }) => {
     // If bot is ready, you can define own middlewares
 
     // here is one for /start command
@@ -63,6 +62,102 @@ TBF({
     })
 })
 ```
+
+### Storage
+
+For a custom SQLite file:
+
+```ts
+TBF({
+    telegram: { token: "xxx" },
+    storage: {
+        driver: "sqlite",
+        filename: "./data/my-bot.sqlite"
+    }
+})
+```
+
+Use `filename: ":memory:"` for tests. For MongoDB deployments:
+
+```ts
+TBF({
+    telegram: { token: "xxx" },
+    storage: {
+        driver: "mongodb",
+        url: "mongodb://localhost:27017",
+        dbName: "my_bot"
+    }
+})
+```
+
+The previous `mongo: { url, dbName }` option remains available for compatibility, but new applications should use `storage`.
+
+### Runtime behavior
+
+New configuration options preserve the historical TBF behavior when omitted:
+
+```ts
+TBF({
+    telegram: { token: "xxx" },
+    config: {
+        autoRemoveMessages: true,
+        clearChatOnPageOpen: true,
+        spamProtection: true,
+        gracefulShutdown: {
+            handleSignals: false
+        }
+    }
+});
+```
+
+`clearChatOnPageOpen` controls immediate cleanup during programmatic page navigation. It is separate from `autoRemoveMessages`, which periodically removes old tracked messages.
+
+Cleanup can be overridden for one page:
+
+```ts
+Component(() => ({
+    clearChatOnOpen: false,
+    actions: { main() {} }
+}));
+```
+
+Or for one transition:
+
+```ts
+await openPage({
+    ctx,
+    page: "history",
+    clearChat: false
+});
+```
+
+The priority is transition option, page option, global config, and finally the compatible default `true`.
+
+`await openPage()` waits until the selected page action completes.
+
+### Graceful shutdown
+
+TBF returns an idempotent `stop()` method that stops Telegraf, the message cleanup timer and HTTP server, then closes storage:
+
+```ts
+const app = await TBF({ telegram: { token } });
+
+process.once("SIGTERM", () => {
+    void app.stop("SIGTERM");
+});
+```
+
+TBF can register `SIGINT` and `SIGTERM` handlers itself when explicitly enabled:
+
+```ts
+config: {
+    gracefulShutdown: {
+        handleSignals: true
+    }
+}
+```
+
+Automatic signal handling is disabled by default so the framework does not take ownership of the host application's process lifecycle.
 
 So next step is create **index** page (check *Introduction to Pages* section below).
 
@@ -170,6 +265,45 @@ You have successfully created your bot with TBF.
 
 ## TBF API
 
+## Development and tests
+
+Use Node.js 24 and install the locked dependencies:
+
+```bash
+nvm use
+npm ci
+```
+
+Run the complete pre-merge verification locally:
+
+```bash
+npm run check
+```
+
+The check includes TypeScript validation, unit tests with enforced coverage thresholds, a production build, and a CommonJS package smoke test. Coverage currently guards callback packing, routing helpers, component discovery, bot middleware, and SQLite storage with minimums of 95% lines, 85% branches, and 99% functions.
+
+GitHub Actions runs the same checks on Node.js 24 for every push and pull request, and also validates the contents of the npm package with `npm pack --dry-run`.
+
+### Publishing
+
+Validate exactly what would be published without changing the npm registry:
+
+```bash
+npm run release:dry-run
+```
+
+Publish manually from an authenticated npm CLI:
+
+```bash
+npm run release:publish
+```
+
+`npm publish` automatically runs `prepublishOnly`, which performs the complete `npm run check` pipeline before uploading anything. Because this is a scoped package, `publishConfig` always selects the public npm registry and public access.
+
+Every push or merge to `master` runs the `Release package` GitHub Actions workflow. The workflow reads the version from `package.json`, verifies the package, publishes a missing version to npm, and creates a GitHub Release with the matching `v<version>` tag and generated release notes. If that version and release already exist, it exits without publishing duplicates. Therefore, bump `package.json` before merging a release into `master`.
+
+Configure npm Trusted Publishing for this repository and the `publish.yml` workflow before using it. The workflow uses short-lived OIDC credentials and does not require an `NPM_TOKEN` secret. It creates the GitHub Release as a draft first and makes it public only after npm publishing succeeds. A failed run can be retried with the workflow's `Run workflow` button on `master`.
+
 
 
 ## Components
@@ -185,6 +319,10 @@ Component is a function that returns object with:
         "main"(){ ... },
         ...(){ ... }
     },
+    events?: {
+        message_reaction(ctx) { ... },
+        poll_answer(ctx) { ... }
+    },
     call?: () => {}
     onCallbackQuery?: () => {}
     onMessage?: () => {}
@@ -195,6 +333,7 @@ The `?` mark after key name means that key is optional.
 If you don't want to change core logic of your Page/Plugin, you can work only with `actions`.  
 * `id` defines uniq ID of your component. It's automatically generated by component's file name if you don't provide it.
 * `actions` is a object with actions inside. `main` action is default action for every component.
+* `events` subscribes the component to Telegram update types that do not have a page route.
 * `call()` is a function that will be triggered when user calls your bot. It's route user's message/action to `onCallbackQuery()` of `onMessage()`. You can override it in your component, but it can destruct your bot.
 * `onCallbackQuery()` is a function that will be triggered when user sends callback query to your bot. You can override it in your component, but it can destruct your bot.
 * `onMessage()` is a function that will be triggered when user sends message (text, sticker, location...) to your bot. You can override it in your component, but it can destruct your bot.
@@ -233,9 +372,17 @@ Routing
 
 Messaging  
 * `this.send({text, buttons?, keyboard?})` sends message to user.
+* `this.reply({text, buttons?, keyboard?, options?})` replies to the current message.
 * `this.update({text, buttons?, keyboard?})` updates bot's visible last message.
 * `this.sendMediaGroup()` sends media group to user.
+* `this.sendPhoto()`, `sendVideo()`, `sendAnimation()`, `sendAudio()`, `sendDocument()`, `sendVoice()`, `sendSticker()` send media and register resulting messages for cleanup.
+* `this.sendLocation()` and `this.sendPoll()` send location and poll messages.
+* `this.sendChatAction("typing")` sends a chat action.
+* `this.react("👍")` reacts to the current message.
 * `this.clearChat()` clears chat with user.  
+
+Low-level Telegram API
+* `this.api(method, payload)` calls any Telegram Bot API method, including methods newer than the installed Telegraf convenience API.
 
 Datastore  
 * `this.user({user_id?})` returns user database object.
@@ -257,6 +404,7 @@ Datastore
 ### Component's action properties  
 * `this.id` component's id
 * `this.ctx` TBF context with Telegraf context. *There is available all Telegraf/Telegram methods and data keys.*
+  TBF also normalizes `ctx.chatId`, `ctx.fromId`, and `ctx.senderChatId`; sender fields are `undefined` when Telegram does not provide them.
 * `this.type` type of component: `page`/`plugin`
 
 Also TBF provides data to action.
@@ -318,6 +466,56 @@ actions: {
 ```
 Oh! What is `false` in return?!  
 `return false` says to TBF to remove user's message. Without `false` in return his message stay in chat until next chat clearing.
+
+### Telegram events
+
+Use `events` for updates that are not routed through a page button or the user's current step:
+
+```ts
+module.exports = Component(() => ({
+    actions: {
+        async main() {
+            await this.send({ text: "React to this message" });
+        }
+    },
+    events: {
+        async message_reaction(ctx) {
+            console.log("Reaction update", ctx.update);
+        },
+        async poll_answer(ctx) {
+            console.log("Poll answer", ctx.update);
+        },
+        async chat_join_request(ctx) {
+            await this.api("approveChatJoinRequest", {
+                chat_id: ctx.chat.id,
+                user_id: ctx.from.id
+            });
+        }
+    }
+}));
+```
+
+Any Telegraf `ctx.updateType` can be used as an event name. Unrouted events are delivered only to components that explicitly subscribe to that event.
+
+Modern Telegram options can be passed without waiting for a TBF release:
+
+```ts
+await this.reply({
+    text: "Reply inside a topic",
+    options: {
+        message_thread_id: 42,
+        link_preview_options: { is_disabled: true }
+    }
+});
+
+await this.react(["👍", "🔥"], { is_big: true });
+
+await this.api("sendMessageDraft", {
+    chat_id: this.ctx.chatId,
+    draft_id: 1,
+    text: "Generating…"
+});
+```
 
 ### Combine callback and message handlers.
 

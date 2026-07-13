@@ -6,9 +6,6 @@ TBF({
     telegram: {
         token: process.env.GAME_TOKEN,
     },
-    mongo: {
-        dbName: "example_game"
-    },
     config: {
         debug: true,
         pages: {

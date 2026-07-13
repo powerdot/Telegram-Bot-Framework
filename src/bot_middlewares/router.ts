@@ -7,7 +7,8 @@ export default ({ db, components, config }: { db: DB, components: Component[], c
     return async function (_ctx: TBFContext, next: Function) {
         let ctx = _ctx;
         if (config.debug) console.log('==============v')
-        let step_ = await db.getValue(ctx, 'step');
+        const isRoutableUpdate = ctx.updateType === "message" || ctx.updateType === "callback_query";
+        let step_ = isRoutableUpdate ? await db.getValue(ctx, 'step') : undefined;
         let parseCallbackPath: CallbackPath = ParseCallbackPath(ctx);
         let parseStep: any = false;
         if (step_) {
@@ -42,16 +43,25 @@ export default ({ db, components, config }: { db: DB, components: Component[], c
         if (config.debug) console.log("[router] Route", routing);
         if (config.debug) console.log("[router] ParseCallbackPath", parseCallbackPath);
         if (config.debug) console.log("[router] ParseStep", parseStep);
-        if (config.debug) console.log("[router] ctx", ctx);
+        if (config.debug) console.log("[router] Context", {
+            updateId: ctx.update?.update_id,
+            updateType: ctx.updateType,
+            chatId: ctx.chatId,
+            fromId: ctx.fromId,
+            senderChatId: ctx.senderChatId,
+        });
         if (config.debug) console.log('==============');
 
         if (routing.component) {
             let component = components.find(p => p.id == routing.component);
             if (component) {
-                component?.call?.(ctx)
+                await component.call?.(ctx)
             } else {
                 console.error(`💔 Component with ID ${routing.component} not found.`);
             }
+        } else {
+            const eventComponents = components.filter(component => component.events?.[ctx.updateType]);
+            for (const component of eventComponents) await component.call?.(ctx);
         }
         return next();
     }
